@@ -48,7 +48,23 @@ const posSelesai = pid => MISI.filter(m => m.pos === pid).every(m => misiSelesai
 const misiPulau = pid => MISI.filter(m => m.pulau === pid);
 const cariPulau = pid => PULAU.find(p => p.id === pid) || PULAU[0];
 const pulauSelesai = pid => misiPulau(pid).every(m => misiSelesai(m.id));
-const semuaSelesai = () => MISI.every(m => misiSelesai(m.id));
+/* Piala Raksasa Juara TKA: hanya pulau materi TKA (Bahasa Inggris = materi tambahan, tka: false) */
+const semuaSelesai = () => MISI.filter(m => cariPulau(m.pulau).tka !== false).every(m => misiSelesai(m.id));
+const SINGKAT_PULAU = { mtk: "MTK", bin: "B. Indo", big: "B. Inggris" };
+const pakaiNoPos = pid => pid !== "bin";          // "Pos 1 · …" untuk Matematika & Bahasa Inggris; Bahasa Indonesia memakai "Jurus"
+/* Soal dengar (Bahasa Inggris, 11 Okt 2026): s.suara dibacakan suara peramban (en-US), tombol 🔊 untuk mengulang */
+function ucapInggris(teks) {
+  try {
+    const ss = window.speechSynthesis; if (!ss || !teks) return;
+    ss.cancel();
+    const u = new SpeechSynthesisUtterance(teks), v = ss.getVoices();
+    u.lang = "en-US"; u.rate = 0.85;
+    try { u.voice = v.find(x => /^en[-_]US/i.test(x.lang)) || v.find(x => /^en/i.test(x.lang)) || null; } catch (e) { /* suara bawaan */ }
+    ss.speak(u);
+  } catch (e) { /* tanpa suara */ }
+}
+const tombolSuara = s => s.suara ? `<button type="button" class="tbl-suara" data-suara="${encodeURIComponent(s.suara)}">🔊 Dengarkan${s.suara.length > 60 ? " bacaan" : ""}</button>` : "";
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".tbl-suara"); if (b) ucapInggris(decodeURIComponent(b.dataset.suara)); });
 const gelar = () => GELAR.filter(g => S.koin >= g[0]).pop()[1];
 const apiAktif = () => S.api.tgl && selisihHari(S.api.tgl, hariIni()) <= 1;
 
@@ -236,11 +252,12 @@ function lMain() {
   layar.innerHTML = `<div class="main-atas"><button class="tutup" id="keluar" aria-label="Keluar">✕</button><div class="info"><b>${M.harian ? "🎁 Tantangan Harian" : m.ikon + " " + m.judul}</b>
       ${M.harian ? `<span class="ket">${m.ikon} ${m.judul}</span>` : `<span class="lencana ${t[1]}">Level ${L} · ${t[0]}</span>`}</div>${M.coba ? '<span class="chip" style="background:var(--ungu-muda);color:var(--ungu)">🧪 Uji coba</span>' : `<span class="chip" style="background:var(--emas-muda);color:var(--emas-teks)">💰 ${fmt(S.koin)}</span>`}</div>
     <div class="titik-soal" aria-label="Soal ${M.i + 1} dari ${M.n}">${titik}</div>${sisa}
-    <div class="kartu kartu-soal" id="kartu-soal"><div class="nomor">SOAL ${M.i + 1} DARI ${M.n}${M.ulangKe ? " · ULANGAN" : ""}</div>${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}
+    <div class="kartu kartu-soal" id="kartu-soal"><div class="nomor">SOAL ${M.i + 1} DARI ${M.n}${M.ulangKe ? " · ULANGAN" : ""}</div>${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}
       <div id="area-jawab">${areaJawab(s)}</div>
       <div class="aksi-soal">${M.ujian ? "" : '<button class="tbl tbl-burung" id="tbl-petunjuk" aria-label="Minta petunjuk Kiko" title="Petunjuk">🦉</button>'}<button class="tbl tbl-hijau tbl-periksa" id="tbl-periksa">${M.ujian ? (M.i + 1 >= M.n ? "Selesai ✔" : "Berikutnya ▶") : "Periksa ✔"}</button></div>
       <div id="gelembung"></div><div id="umpan"></div></div>`;
   pasangJawab(s);
+  if (s.suara) setTimeout(() => ucapInggris(s.suara), 350);
   layar.querySelector("#keluar").addEventListener("click", konfirmasiKeluar);
   layar.querySelector("#tbl-petunjuk")?.addEventListener("click", tunjukPetunjuk);
   layar.querySelector("#tbl-periksa").addEventListener("click", () => (M.diperiksa ? lanjutSoal() : periksaJawab()));
@@ -370,7 +387,7 @@ function ulasUjian() {
     const opsi = s.bentuk === "pg" || s.bentuk === "pgk" ? `<ol class="contoh-opsi" type="A">${s.opsi.map(o => `<li>${o}</li>`).join("")}</ol>` : "";
     return `<div class="kartu ulas-tes ${x.benar ? "benar" : "salah"}"><div class="nomor">NOMOR ${k + 1} · ${x.benar ? "✅ Benar" : "❌ Salah"}</div>
       ${s.bacaan ? `<details class="contoh-bacaan"><summary>Lihat bacaan</summary><div class="bacaan">${s.bacaan}</div></details>` : ""}
-      <div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
+      ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
       <div class="ulas-jawab"><b>Jawabanmu:</b><div>${jawabanTeks(s, x.j)}</div></div>
       <div class="contoh-kunci"><b>Kunci:</b><div>${s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ` : ""}${tulisKunci(s)}</div></div>
       ${s.bahas ? `<div class="bahas-tes">💡 ${s.bahas}</div>` : ""}</div>`; }).join("") + "</details>";
@@ -395,10 +412,10 @@ function lPiala() {
   const jml = Object.keys(S.piala).length;
   layar.innerHTML = `<h1 class="judul-bagian" style="font-size:28px;margin-top:16px">🏆 Lemari Piala</h1><p class="ket">${jml ? `Kamu sudah mengumpulkan <b>${jml} piala</b>. Terus kumpulkan sampai Piala Raksasa!` : "Lemari masih kosong. Selesaikan Level 10 sebuah misi untuk mendapat piala pertamamu!"}</p>
     <div class="lemari">
-      <div class="raksasa">${pialaSVG(S.piala.raksasa ? "raksasa" : "kosong", S.piala.raksasa ? "👑" : "")}<h3>Piala Raksasa Juara TKA</h3><div class="ket">${S.piala.raksasa ? "Diraih " + tglIndo(S.piala.raksasa) : `Selesaikan semua pulau${S.tka ? " sebelum " + tglIndo(S.tka) : " sebelum hari TKA"}`}</div></div>
+      <div class="raksasa">${pialaSVG(S.piala.raksasa ? "raksasa" : "kosong", S.piala.raksasa ? "👑" : "")}<h3>Piala Raksasa Juara TKA</h3><div class="ket">${S.piala.raksasa ? "Diraih " + tglIndo(S.piala.raksasa) : `Selesaikan pulau ${PULAU.filter(p => p.tka !== false).map(p => p.judul).join(" & ")}${S.tka ? " sebelum " + tglIndo(S.tka) : " sebelum hari TKA"}`}</div></div>
       <div class="rak"><h3>Piala Pulau</h3><div class="barisan">${PULAU.map(p => `<div class="slot-piala besar">${pialaSVG(S.piala["pulau-" + p.id] ? "emas" : "kosong", S.piala["pulau-" + p.id] ? p.ikon : "")}${p.judul}</div>`).join("")}</div></div>
-      <div class="rak"><h3>📝 Pos Tes</h3><div class="barisan">${POS_TES.map(t => `<div class="slot-piala" title="${judulTes(t)} ${cariPulau(t.pulau).judul}">${pialaSVG(S.piala["tes-" + t.id] ? "perak" : "kosong", S.piala["tes-" + t.id] ? "📝" : "")}${t.pulau === "mtk" ? "MTK" : "B. Indo"} ${t.no}</div>`).join("")}</div></div>
-      ${POS.map(p => `<div class="rak"><h3>${p.ikon} ${p.pulau === "mtk" ? `Pos ${p.no} · ` : ""}${p.judul}</h3><div class="barisan"><div class="slot-piala">${pialaSVG(S.piala["pos-" + p.id] ? "perak" : "kosong", S.piala["pos-" + p.id] ? p.ikon : "")}Piala Pos</div>
+      <div class="rak"><h3>📝 Pos Tes</h3><div class="barisan">${POS_TES.map(t => `<div class="slot-piala" title="${judulTes(t)} ${cariPulau(t.pulau).judul}">${pialaSVG(S.piala["tes-" + t.id] ? "perak" : "kosong", S.piala["tes-" + t.id] ? "📝" : "")}${SINGKAT_PULAU[t.pulau] || t.pulau} ${t.no}</div>`).join("")}</div></div>
+      ${POS.map(p => `<div class="rak"><h3>${p.ikon} ${pakaiNoPos(p.pulau) ? `Pos ${p.no} · ` : ""}${p.judul}</h3><div class="barisan"><div class="slot-piala">${pialaSVG(S.piala["pos-" + p.id] ? "perak" : "kosong", S.piala["pos-" + p.id] ? p.ikon : "")}Piala Pos</div>
         ${MISI.filter(m => m.pos === p.id).map(m => `<div class="slot-piala" title="${m.judul}">${pialaSVG(S.piala["emas-" + m.id] ? "emas" : S.piala["misi-" + m.id] ? "perunggu" : "kosong", S.piala["misi-" + m.id] ? m.ikon : "")}${m.judul.split(/[ ,&]/)[0]}</div>`).join("")}</div></div>`).join("")}
     </div>
     <div class="kartu"><h3>Cara mendapat piala</h3><ul class="ket" style="margin:8px 0 0;padding-left:20px"><li>🥉 <b>Piala kecil</b>: selesaikan Level 10 sebuah misi.</li><li>🥇 <b>Piala emas kecil</b>: kumpulkan 30⭐ di satu misi.</li><li>🥈 <b>Piala pos</b>: selesaikan semua misi di satu pos.</li><li>📝 <b>Piala Pos Tes</b>: raih nilai ${TES_TUNTAS} atau lebih di Pos Tes (30 soal, 75 menit).</li><li>🏆 <b>Piala pulau</b>: jelajahi seluruh pulau.</li><li>👑 <b>Piala Raksasa</b>: semua pulau selesai sebelum hari TKA!</li></ul></div>`;
@@ -451,7 +468,7 @@ function ortuMateri(el) {
       <p class="ket" style="margin:8px 0 0">Setelah tiap pos/jurus ada <b>Pos Tes</b> (30 soal, 75 menit, setara TKA) yang menguji semua pos sebelumnya. Buka sebuah misi, lalu tekan <b>Contoh</b> untuk melihat soal acak beserta kuncinya, atau <b>Coba</b> untuk mengerjakan level itu sendiri. Uji coba tidak mengubah kemajuan dan koin anak.</p></div>` +
     PULAU.map(p => { const ms = misiPulau(p.id), ps = POS.filter(x => x.pulau === p.id);
       return `<div class="kartu modul-kartu modul-${p.id}"><div class="modul-kepala"><span class="md" aria-hidden="true">${p.ikon}</span><div><h2>Pulau ${p.judul}</h2><p>${ps.length} pos · ${ms.length} misi · ${ms.length * 10} level</p></div></div>` +
-        ps.map(pos => `<div class="pos-sub">${pos.ikon} ${p.id === "mtk" ? `Pos ${pos.no} · ` : ""}${pos.judul}</div>` + MISI.filter(m => m.pos === pos.id).map(m =>
+        ps.map(pos => `<div class="pos-sub">${pos.ikon} ${pakaiNoPos(p.id) ? `Pos ${pos.no} · ` : ""}${pos.judul}</div>` + MISI.filter(m => m.pos === pos.id).map(m =>
           `<details class="tk-baris" data-misi="${m.id}"><summary><span class="tk-no" aria-hidden="true">${m.ikon}</span><span class="tk-nama"><b>${m.judul}</b><span>Anak lulus ${dataMisi(m.id).lv}/10 level · ⭐ ${bintangMisi(m.id)}/30</span></span><span class="tk-panah" aria-hidden="true"></span></summary><div class="tk-isi"></div></details>`).join("")).join("") + htmlPosTesMateri(p.id) + `</div>`; }).join("") +
     `<p class="ket" style="text-align:center">Materi mengikuti Kurikulum Merdeka Fase C. Level 8 setara soal TKA, level 9–10 di atasnya.<br>Cocokkan dengan kisi-kisi resmi TKA SD/MI dari Pusmendik.</p></div>`;
   const w = el.querySelector(".materi");
@@ -478,7 +495,7 @@ function contohHtml(s) {
   const opsi = s.bentuk === "pg" || s.bentuk === "pgk" ? `<ol class="contoh-opsi" type="A">${s.opsi.map(o => `<li>${o}</li>`).join("")}</ol>` : "";
   const kunci = s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ${s.opsi[s.kunci]}` : s.bentuk === "pgk" ? s.opsi.map((o, i) => (s.kunci[i] ? `${"ABCDE"[i]}. ${o}` : "")).filter(Boolean).join("<br>") : tulisKunci(s);
   return `<div class="contoh-satu">${s.bacaan ? `<details class="contoh-bacaan"><summary>Lihat bacaan</summary><div class="bacaan">${s.bacaan}</div></details>` : ""}
-    <div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}<div class="contoh-kunci"><b>Kunci:</b><div>${kunci}</div></div></div>`;
+    ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}<div class="contoh-kunci"><b>Kunci:</b><div>${kunci}</div></div></div>`;
 }
 
 const pilihanTol = pilih => Array.from({ length: TOLERANSI_MAKS + 1 }, (_, i) => `<option value="${i}" ${i === pilih ? "selected" : ""}>${i ? i + "× salah" : "Tanpa salah"}</option>`).join("");

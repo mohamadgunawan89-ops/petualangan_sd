@@ -11,7 +11,8 @@
 
 const TES_SOAL = 30, TES_MENIT = 75, TES_TUNTAS = 70, TES_RIWAYAT = 30, KUNCI_TES = "ptka_sd_tes";
 /* Bobot materi per pos (dibagi ulang sesuai pos yang diuji) */
-const BOBOT_TES = { bil: 12, alj: 5, ukr: 8, dat: 5, tem: 9, pah: 11, nal: 10 };
+const BOBOT_TES = { bil: 12, alj: 5, ukr: 8, dat: 5, tem: 9, pah: 11, nal: 10,
+  "e-aku": 5, "e-angka": 6, "e-rumah": 4, "e-giat": 6, "e-tata": 3, "e-baca": 6 };   // Bahasa Inggris (11 Okt 2026)
 /* Sebaran tingkat: 8 soal sulit, 16 setara TKA, 6 di atas TKA */
 const LEVEL_TES = [[7, 8], [8, 16], [9, 6]];
 const POS_TES = PULAU.flatMap(pl => { const ps = POS.filter(p => p.pulau === pl.id);
@@ -19,8 +20,8 @@ const POS_TES = PULAU.flatMap(pl => { const ps = POS.filter(p => p.pulau === pl.
 const cariTes = id => POS_TES.find(t => t.id === id);
 const tesUntukPos = p => POS_TES.find(t => t.pulau === p.pulau && t.no === p.no);
 const judulTes = t => `Pos Tes ${t.no}`;
-const namaPosTes = pid => { const p = POS.find(x => x.id === pid); return p.pulau === "mtk" ? `Pos ${p.no} · ${p.judul}` : p.judul; };
-const cakupanTes = t => (t.pos.length === 1 ? namaPosTes(t.pos[0]) : t.pulau === "mtk" ? `Pos 1–${t.no}` : t.pos.map(id => POS.find(p => p.id === id).judul.replace("Jurus ", "")).join(", "));
+const namaPosTes = pid => { const p = POS.find(x => x.id === pid); return p.pulau !== "bin" ? `Pos ${p.no} · ${p.judul}` : p.judul; };
+const cakupanTes = t => (t.pos.length === 1 ? namaPosTes(t.pos[0]) : t.pulau !== "bin" ? `Pos 1–${t.no}` : t.pos.map(id => POS.find(p => p.id === id).judul.replace("Jurus ", "")).join(", "));
 const riwayatTes = id => (S.posTes && S.posTes[id]) || [];
 const terbaikTes = id => riwayatTes(id).reduce((a, x) => Math.max(a, x.nilai), -1);
 const tesTerbuka = t => t.pos.every(posSelesai);
@@ -95,7 +96,7 @@ function lTes() {
       <span class="ket">${T.coba ? "🧪 Uji coba · " : ""}${cakupanTes(t)}</span></div><span class="chip jam-tes" id="jam-tes" role="timer" aria-label="Sisa waktu">⏱️ ${jamTes(sisaDetikTes(T))}</span></div>
     <div class="nomor-tes" id="nomor-tes" aria-label="Nomor soal">${T.soal.map((x, k) => `<button type="button" data-no="${k}" aria-label="Soal ${k + 1}">${k + 1}</button>`).join("")}</div>
     <p class="ket keterangan-nomor"><i class="isi"></i>sudah dijawab <i class="ragu"></i>ragu-ragu <i></i>belum</p>
-    <div class="kartu kartu-soal" id="kartu-soal"><div class="nomor">SOAL ${T.i + 1} DARI ${T.soal.length}</div>${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}
+    <div class="kartu kartu-soal" id="kartu-soal"><div class="nomor">SOAL ${T.i + 1} DARI ${T.soal.length}</div>${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}
       <div id="area-jawab">${areaJawab(s)}</div>
       <div class="aksi-tes"><button class="tbl tbl-putih" id="t-mundur" ${T.i ? "" : "disabled"} aria-label="Soal sebelumnya">◀</button>
         <button class="tbl ${T.ragu[T.i] ? "tbl-utama" : "tbl-putih"}" id="t-ragu" aria-pressed="${T.ragu[T.i]}" aria-label="Tandai ragu-ragu">🤔 Ragu</button>
@@ -227,7 +228,7 @@ function lUlasTes() {
     const opsi = s.bentuk === "pg" || s.bentuk === "pgk" ? `<ol class="contoh-opsi" type="A">${s.opsi.map(o => `<li>${o}</li>`).join("")}</ol>` : "";
     return `<div class="kartu ulas-tes ${h}"><div class="nomor">NOMOR ${k + 1} · ${ikon[h]} <span class="ket">· ${namaPosTes(s.pos)}</span></div>
       ${s.bacaan ? `<details class="contoh-bacaan"><summary>Lihat bacaan</summary><div class="bacaan">${s.bacaan}</div></details>` : ""}
-      <div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
+      ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
       <div class="ulas-jawab"><b>Jawabanmu:</b><div>${jawabanTeks(s, ULAS.jawab[k])}</div></div>
       <div class="contoh-kunci"><b>Kunci:</b><div>${s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ` : ""}${tulisKunci(s)}</div></div>
       ${s.bahas ? `<div class="bahas-tes">💡 ${s.bahas}</div>` : ""}</div>`; }).join("");
@@ -245,7 +246,7 @@ function kartuTesPulau(p) {
   const t = tesUntukPos(p); if (!t) return "";
   const buka = tesTerbuka(t), terbaik = terbaikTes(t.id), kali = riwayatTes(t.id).length, jalan = bacaTesJalan(), piala = S.piala["tes-" + t.id];
   const status = jalan && jalan.tid === t.id ? (sisaDetikTes(jalan) > 0 ? `⏱️ Sedang dikerjakan · sisa ${jamTes(sisaDetikTes(jalan))}` : "⏰ Waktu habis · lihat hasil")
-    : !buka ? `🔒 Selesaikan semua misi ${t.pos.length > 1 ? (t.pulau === "mtk" ? `Pos 1–${t.no}` : "jurus 1–" + t.no) : "di pos ini"} dulu`
+    : !buka ? `🔒 Selesaikan semua misi ${t.pos.length > 1 ? (t.pulau !== "bin" ? `Pos 1–${t.no}` : "jurus 1–" + t.no) : "di pos ini"} dulu`
       : terbaik >= 0 ? `Nilai terbaik <b>${terbaik}</b> · ${kali}× dikerjakan` : "Siap dikerjakan! Uji semua yang sudah kamu pelajari.";
   return `<button class="kartu-tes ${buka ? "" : "kunci"}" data-ke="postes" data-arg="${t.id}"><div class="ikon">📝</div><div class="tengah"><h3>${judulTes(t)} <span class="lencana k5">${cakupanTes(t)}</span></h3>
     <div class="status">${TES_SOAL} soal · ${TES_MENIT} menit · setara TKA</div><div class="status">${status}</div></div><div class="kanan">${piala ? pialaSVG("perak", "📝") : buka ? '<span style="font-size:26px">▶️</span>' : '<span style="font-size:24px">🔒</span>'}</div></button>`;

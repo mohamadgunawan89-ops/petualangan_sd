@@ -98,6 +98,11 @@ input, select { font: inherit; }
 .pulau:active { transform: scale(.98); }
 .pulau.mtk { background: linear-gradient(135deg, #1FA37A 0%, #127A8F 100%); }
 .pulau.bin { background: linear-gradient(135deg, #8B6FD6 0%, #5A47A8 100%); }
+.pulau.big { background: linear-gradient(135deg, #F08A3C 0%, #C2410C 100%); }
+/* Tombol dengar (soal Bahasa Inggris) */
+.tbl-suara { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 10px; padding: 10px 18px; border: 0; border-radius: 999px;
+  background: #FFF1E6; color: #9A3412; font: inherit; font-weight: 800; font-size: 17px; cursor: pointer; box-shadow: 0 3px 0 #FDBA8C; }
+.tbl-suara:active { transform: translateY(2px); box-shadow: 0 1px 0 #FDBA8C; }
 .pulau.kunci { filter: saturate(.35); cursor: default; }
 .pulau .gbr-pulau { position: absolute; right: -8px; bottom: -14px; font-size: 110px; opacity: .9; line-height: 1; }
 .pulau h3 { font-size: 26px; }
@@ -382,7 +387,7 @@ canvas#konfeti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-e
 .modul-kepala { display: flex; align-items: center; gap: 12px; padding: 16px 18px; color: #fff; background: linear-gradient(120deg, var(--md-a), var(--md-b)); }
 .modul-kepala .md { font-size: 26px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: rgba(255,255,255,.16); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); flex: none; }
 .modul-kepala h2 { margin: 0; color: #fff; font-size: 19px; } .modul-kepala p { margin: 2px 0 0; color: rgba(255,255,255,.8); font-size: 14px; }
-.modul-mtk { --md-a: #1D2A3A; --md-b: #2F5D7C; } .modul-bin { --md-a: #4A2E86; --md-b: #7B4FD6; }
+.modul-mtk { --md-a: #1D2A3A; --md-b: #2F5D7C; } .modul-bin { --md-a: #4A2E86; --md-b: #7B4FD6; } .modul-big { --md-a: #7C2D12; --md-b: #C2410C; }
 .pos-sub { padding: 10px 18px 6px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--tinta-2); background: var(--kertas-2); border-top: 1px solid var(--garis); }
 .tk-baris { border-top: 1px solid var(--garis); }
 .tk-baris > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px 18px; }
