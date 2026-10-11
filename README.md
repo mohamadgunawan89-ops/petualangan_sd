@@ -39,6 +39,9 @@ kumpulkan piala. Halaman statis (GitHub Pages), kemajuan disimpan di perangkat d
 - Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).
 - Isi database ada di `database/migrations/` (urut nama berkas): tabel `pts_anak` + fungsi `pts_buat/ambil/simpan/hapus`,
   dan `pts_ping` untuk penjaga. Hanya PostgreSQL biasa (tanpa fitur khusus Supabase), jadi bisa pindah ke server lain.
+- **11 Okt 2026**: isi database sempat terhapus (skrip pembersih Tryout terjalankan di proyek ini) lalu dipasang ulang.
+  Baris `pts_anak` lama hilang; perangkat anak yang membawa Kode Anak lama mengirim ulang kemajuannya otomatis
+  (`pts_pulihkan`, dipanggil `sinkronkan()` bila `pts_ambil` menjawab "tidak ditemukan").
 - **Menerapkan migrasi baru**: buka Supabase → SQL Editor → New query → tempel isi berkas → Run.
 - **Penjaga**: `.github/workflows/jaga-supabase.yml` memanggil `pts_ping` tiap 3 hari agar proyek gratis tidak dijeda.
   Bila gagal, GitHub mengirim surel; periksa apakah proyek Supabase sedang dijeda (Restore).

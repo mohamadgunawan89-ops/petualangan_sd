@@ -74,7 +74,13 @@ async function sinkronkan({ diam = true } = {}) {
   if (M || T) { S.sinkron.tertunda = true; return false; }   // jangan mengganti data saat anak mengerjakan soal atau Pos Tes
   sedangSinkron = true;
   try {
-    const srv = await rpcPts("pts_ambil", { p_kode: S.sinkron.kode });
+    let srv;
+    try { srv = await rpcPts("pts_ambil", { p_kode: S.sinkron.kode }); }
+    catch (e) {   // kode hilang dari server (database sempat terhapus 11 Okt 2026): kirim ulang kemajuan perangkat ini dengan kode yang sama
+      if (!/tidak ditemukan/.test(e.message)) throw e;
+      await rpcPts("pts_pulihkan", { p_kode: S.sinkron.kode, p_data: dataKirim(S) });
+      srv = { data: {} };
+    }
     if (M || T) { S.sinkron.tertunda = true; return false; }
     const sebelum = JSON.stringify(dataKirim(S)), g = gabungKemajuan(S, srv.data || {});
     g.riwayat = S.riwayat; g.suara = S.suara; g.sinkron = S.sinkron;
