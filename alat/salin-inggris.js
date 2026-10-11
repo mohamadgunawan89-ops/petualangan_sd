@@ -1,8 +1,11 @@
 // Salin materi English Reading Tahap 0–1 ke Petualangan TKA SD (soal/inggris-data.js) + pola.js utuh.
 // Dijalankan ulang bila materi English Reading Tahap 0–1 berubah (dari folder Petualangan_TKA_SD):  node alat/salin-inggris.js
-// Butuh folder English_Reading di sebelah folder ini (../English_Reading).
+// Folder English Reading dicari otomatis, atau sebutkan:  node alat/salin-inggris.js C:\Development\system_sekolah\English_Reading
 const fs = require('fs'), path = require('path');
-const ER = path.join(__dirname, '..', '..', 'English_Reading') + '/', PT = path.join(__dirname, '..', 'soal') + '/';
+// Folder English Reading: argumen pertama, atau ../English_Reading, atau ../system_sekolah/English_Reading
+const calonER = [process.argv[2], path.join(__dirname, '..', '..', 'English_Reading'), path.join(__dirname, '..', '..', 'system_sekolah', 'English_Reading')].filter(Boolean);
+const ER = (calonER.find((d) => fs.existsSync(path.join(d, 'bacaan.js'))) || (() => { console.error('Folder English Reading tidak ditemukan. Pakai:  node alat/salin-inggris.js C:\Development\system_sekolah\English_Reading'); process.exit(1); })()) + '/';
+const PT = path.join(__dirname, '..', 'soal') + '/';
 global.window = {};
 require(ER + 'bacaan.js'); require(ER + 'soal.js');
 const W = global.window;

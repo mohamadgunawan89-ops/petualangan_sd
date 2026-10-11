@@ -34,9 +34,28 @@ kumpulkan piala. Halaman statis (GitHub Pages), kemajuan disimpan di perangkat d
 - Diuji: 66.000 soal (44 misi × 10 level × 150, dengan & tanpa suara) tanpa kunci keliru/opsi kembar;
   uji browser beranda, soal dengar, jawab benar, Pos Tes ketiga pulau, Dasbor Ortu.
 
-## Pindah ke akun lain (direncanakan)
+## Database (Supabase sendiri, sejak 11 Okt 2026)
 
-Repo ini akan dipindah ke akun GitHub dan Supabase lain. Yang perlu dibawa ke Supabase baru: tabel `pts_anak`
-dan fungsi `pts_*` (migrasi `20261004200000_petualangan_tka_sd_sinkron_kode.sql` di repo database_tryout,
-kontrak `kontrak/petualangan.sql`), lalu ganti `url`/`key` di `config.js`. Data Kode Anak lama dipindah
-dengan ekspor/impor tabel `pts_anak`.
+- Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).
+- Isi database ada di `database/migrations/` (urut nama berkas): tabel `pts_anak` + fungsi `pts_buat/ambil/simpan/hapus`,
+  dan `pts_ping` untuk penjaga. Hanya PostgreSQL biasa (tanpa fitur khusus Supabase), jadi bisa pindah ke server lain.
+- **Menerapkan migrasi baru**: buka Supabase → SQL Editor → New query → tempel isi berkas → Run.
+- **Penjaga**: `.github/workflows/jaga-supabase.yml` memanggil `pts_ping` tiap 3 hari agar proyek gratis tidak dijeda.
+  Bila gagal, GitHub mengirim surel; periksa apakah proyek Supabase sedang dijeda (Restore).
+- **Rahasia**: kunci `sb_secret_…` dan sandi database **jangan** ditaruh di repo atau dikirim lewat chat. `.env` dan
+  `.pindah/` (berisi data anak) sudah diabaikan git.
+
+## Pindah akun (11 Okt 2026)
+
+Dulu menumpang di database Tryout dan repo `smapmerdekasoreang99-star/game_tka_sd`; sekarang di repo
+`mohamadgunawan89-ops/petualangan_sd` dan Supabase sendiri. Data Kode Anak lama ikut dipindah. Karena alamat situs
+berubah, kemajuan di perangkat (localStorage) tidak ikut: anak membuka situs baru → **🔗 Masukkan Kode Anak lain** →
+ketik Kode Anaknya, dan kemajuan dari server muncul kembali.
+
+Bila suatu saat pindah lagi: jalankan semua berkas `database/migrations/` di server baru, salin isi tabel `pts_anak`,
+ganti `url`/`key` di `config.js`, dan ganti alamat di `jaga-supabase.yml`.
+
+## Mengerjakan di komputer
+
+Folder ini proyek tersendiri (buka foldernya langsung di VS Code). Materi Bahasa Inggris disalin dari English Reading:
+`node alat/salin-inggris.js <folder English_Reading>`.
