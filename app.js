@@ -19,6 +19,17 @@ const SARAN_UMUM = "Baca soalnya pelan-pelan. Garis bawahi angka dan kata pentin
 const bawaan = () => ({ v: 1, profil: null, tka: "", suara: true, koin: 0, api: { n: 0, tgl: "" }, misi: {}, piala: {}, posTes: {}, harian: { tgl: "", selesai: false }, riwayat: {}, log: [], atur: { soal: 5, toleransi: 1, ulang: true } });
 function muatData() { try { const x = JSON.parse(localStorage.getItem(KUNCI_SIMPAN)); if (x && x.v === 1) return Object.assign(bawaan(), x); } catch (e) { /* kosong */ } return bawaan(); }
 let S = muatData();
+/* Pindah alamat (11 Okt 2026): situs lama mengirim kemajuan perangkat lewat #pindah=… (tidak dikirim ke server mana pun).
+   Diambil bila perangkat ini belum punya kemajuan di alamat baru; Kode Anak ikut, lalu sinkron menggabungkan dengan server. */
+(function terimaPindahan() {
+  const m = /^#pindah=(.+)$/.exec(location.hash); if (!m) return;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* biarkan */ }
+  try {
+    const x = JSON.parse(decodeURIComponent(m[1]));
+    if (!x || x.v !== 1 || !x.profil || adaKemajuan(S)) return;
+    S = Object.assign(bawaan(), x); simpanData(false);
+  } catch (e) { /* data pindahan rusak: mulai seperti biasa */ }
+})();
 /* Aturan level dari halaman Orang Tua: jumlah soal, batas kesalahan, ulangi nomor yang salah, dan mode ujian
    (mode ujian: tanpa tanda benar/salah dan tanpa pengulangan; hasil dan pembahasan baru tampil di akhir level).
    Batas kesalahan terpisah per mode (5 Okt 2026): S.atur.toleransi untuk mode belajar (lewat batas = ulang dari
