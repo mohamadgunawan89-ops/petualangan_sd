@@ -1,5 +1,5 @@
 /* Penyimpanan online (Kode Anak) — Petualangan TKA SD
-   Kemajuan juga disimpan di database Tryout (tabel pts_anak, lewat fungsi pts_*). Game tidak
+   Kemajuan juga disimpan di database Supabase sendiri (tabel pts_anak, lewat fungsi pts_*). Game tidak
    punya akun, jadi tiap anak ditandai Kode Anak 8 huruf yang dibuat otomatis; HP orang tua
    memakai kode itu sekali untuk tersambung. Game tetap bisa dimainkan tanpa internet;
    sinkron menyusul saat tersambung. Kemajuan dua perangkat digabung: level & bintang
