@@ -6,15 +6,17 @@
    tertinggi, piala & riwayat aktivitas disatukan, pengaturan orang tua yang terbaru. */
 "use strict";
 
-const SINKRON_DB = { url: "https://jzxcnfetpjkltjjbglxz.supabase.co", key: "sb_publishable_9pl5IOJl-Vx0KEnHtCs3nA_ioZOkacq" };
+// Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
+const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
 const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
 let sedangSinkron = false, jedaSinkron = null;
 
 async function rpcPts(fn, arg) {
+  if (!SINKRON_DB) throw new Error("Server belum diatur (config.js).");
   let r; const henti = new AbortController(), batas = setTimeout(() => henti.abort(), 12000);
   try {
     r = await fetch(`${SINKRON_DB.url}/rest/v1/rpc/${fn}`, { method: "POST", signal: henti.signal,
-      headers: { "Content-Type": "application/json", apikey: SINKRON_DB.key, Authorization: "Bearer " + SINKRON_DB.key }, body: JSON.stringify(arg) });
+      headers: { "Content-Type": "application/json", apikey: SINKRON_DB.key, ...(/^eyJ[\w-]*\.[\w-]+\.[\w-]*$/.test(SINKRON_DB.key) ? { Authorization: "Bearer " + SINKRON_DB.key } : {}) }, body: JSON.stringify(arg) });
   } catch (e) { throw new Error("Tidak tersambung ke internet."); } finally { clearTimeout(batas); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(String(j.message || "Server menolak permintaan.").replace("Kode sinkron", "Kode Anak"));
