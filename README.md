@@ -52,6 +52,17 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
 (`d`, `dh`, `b`, `s[5]`), ikut tersinkron (gabung = nilai terbesar). Pos 7 "Teks Pendek" = Tahap 2 English Reading
 (3 pola + 7 bacaan), disalin oleh `node alat/salin-inggris.js`.
 
+## Materi & pembahasan bertahap Matematika (12 Okt 2026)
+
+- **📖 Pelajari dulu** (kartu di jalur setiap misi Matematika → layar `materi`, `materi.js`): teori singkat bergambar,
+  2–3 contoh soal yang langkahnya dibuka satu per satu, dan contoh acak dari bank soal. Isinya di
+  `soal/materi-bil.js`, `materi-alj.js`, `materi-ukr.js`, `materi-dat.js` (`MATERI[idMisi] = { ringkas, contoh }`).
+- **Pembahasan langkah demi langkah** setelah menjawab, benar maupun salah: setiap cetakan soal Matematika punya
+  `langkah` (larik HTML, butir terakhir = jawaban). `bentukTKA` ikut membawa/menyusun `langkah` untuk bentuk pg, bs, pgk.
+  Ditampilkan juga di pembahasan mode ujian, Pos Tes, dan contoh di halaman Orang Tua. Belum lulus level → tombol
+  "Pelajari materinya dulu".
+- Pemeriksa: `node alat/cek-langkah.js [bil|alj|ukr|dat] [sampel]` (langkah ada, tag seimbang, materi lengkap).
+
 ## Database (Supabase sendiri, sejak 11 Okt 2026)
 
 - Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).

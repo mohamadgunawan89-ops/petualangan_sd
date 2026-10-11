@@ -147,7 +147,7 @@ function tampil(nama_, arg) {
   if (nama_ !== "sambut") segarkanData();
   if (nama_ === "ortu" && !izinOrtu && S.peran !== "ortu") return mintaPin();   // PIN hanya di HP anak; HP orang tua langsung masuk
   izinOrtu = false; layarKini = nama_; argKini = arg; window.scrollTo(0, 0);
-  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, latih: lLatih, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
+  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, latih: lLatih, materi: lMateri, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-ke]"); if (b) { bunyi.klik(); tampil(b.dataset.ke, b.dataset.arg); } });
 function tampilPesan(t, ms = 2600) { document.querySelectorAll(".pesan").forEach(x => x.remove()); const d = document.createElement("div"); d.className = "pesan"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
@@ -222,7 +222,7 @@ function lJalur(id) {
   const m = cariMisi(id); if (!m) return tampil("beranda"); pasangKepala("pulau", m.pulau); pasangNav("beranda");
   const d = dataMisi(id), H = 112, pts = XJALUR.map((x, i) => `${x} ${i * H + H / 2}`), kunci1 = level1Terkunci(id);   // Bahasa Inggris: Dengar & Baca dulu
   layar.innerHTML = `<div class="jalur-kepala"><div class="ikon-misi">${m.ikon}</div><h1>${m.judul}</h1><p class="ket">⭐ ${bintangMisi(id)}/30 · ${misiSelesai(id) ? (S.piala["emas-" + id] ? "🏆 Piala emas sudah didapat!" : "🏆 Piala didapat! Raih 30⭐ untuk piala emas.") : "Selesaikan Level 10 untuk mendapat piala 🏆"}</p></div>
-    ${misiInggris(id) ? kartuLatihJalur(id) : ""}
+    ${misiInggris(id) ? kartuLatihJalur(id) : adaMateri(id) ? kartuMateriJalur(id) : ""}
     <div class="jalur" style="height:${10 * H}px"><svg class="lintasan" viewBox="0 0 100 ${10 * H}" preserveAspectRatio="none" aria-hidden="true"><path d="M${pts.join(" L")}" vector-effect="non-scaling-stroke"/></svg>
     ${XJALUR.map((x, i) => { const L = i + 1, b = d.bin[i], buka = L <= d.lv + 1 && !(L === 1 && kunci1), lulus = L <= d.lv, cls = lulus ? "lulus" : buka ? "buka" : "kunci";
       return `<div class="simpul-baris ${x > 50 ? "kanan" : "kiri"}" style="position:absolute;top:${i * H}px;left:0;right:0;height:${H}px"><button class="simpul ${cls} ${L === 10 ? "bos" : ""}" data-level="${L}" style="position:absolute;left:${x}%;transform:translateX(-50%)" aria-label="Level ${L}${buka ? "" : ", terkunci"}">
@@ -333,8 +333,8 @@ function periksaJawab() {
   if (M.ujian) { M.rekam.push({ s, j: M.jawab, benar: r.benar }); bunyi.klik(); simpanData(); M.i++; return soalBerikut(); }
   document.getElementById("gelembung").innerHTML = "";
   const u = document.getElementById("umpan");
-  if (r.benar) { bunyi.benar(); if (!M.coba) terbangKoin("+10 💰"); u.innerHTML = `<div class="umpan benar"><h3>✅ ${acakDari(PUJIAN)}</h3>${s.bahas ? `<div class="bahas">${s.bahas}</div>` : ""}</div>`; }
-  else { bunyi.salah(); u.innerHTML = `<div class="umpan salah"><h3>❌ Belum tepat</h3>${r.catatan ? `<div class="catatan">${r.catatan}</div>` : ""}<div>Jawaban yang benar:</div><div class="kunci-jawab">${tulisKunci(s)}</div>${s.bahas ? `<div class="bahas">${s.bahas}</div>` : ""}<div class="ket" style="margin-top:8px">🦉 ${acakDari(SEMANGAT)}</div></div>`; }
+  if (r.benar) { bunyi.benar(); if (!M.coba) terbangKoin("+10 💰"); u.innerHTML = `<div class="umpan benar"><h3>✅ ${acakDari(PUJIAN)}</h3>${htmlBahas(s)}</div>`; }
+  else { bunyi.salah(); u.innerHTML = `<div class="umpan salah"><h3>❌ Belum tepat</h3>${r.catatan ? `<div class="catatan">${r.catatan}</div>` : ""}<div>Jawaban yang benar:</div><div class="kunci-jawab">${tulisKunci(s)}</div>${htmlBahas(s)}<div class="ket" style="margin-top:8px">🦉 ${acakDari(SEMANGAT)}</div></div>`; }
   tandaiPilihan(s);
   const habis = !M.harian && M.salah > M.toleransi; M.ulangi = !r.benar && M.ulang && !habis; M.habis = habis;
   if (habis) u.insertAdjacentHTML("beforeend", `<div class="umpan ulang-awal"><h3>🔁 Ulangi dari nomor 1</h3><div>Kesalahan sudah ${M.salah}×, melebihi batas ${M.toleransi ? M.toleransi + "×" : "(harus benar semua)"}. Baca pembahasannya dulu, lalu kita mulai lagi dari nomor 1 dengan soal baru. Kamu pasti bisa!</div></div>`);
@@ -396,6 +396,7 @@ function selesaiLevel() {
     ${ulasUjian()}
     <div class="tombol-tumpuk">${lulus && L < 10 ? `<button class="tbl tbl-utama" id="h-lanjut">Lanjut ke Level ${L + 1} ▶</button>` : ""}
       <button class="tbl ${lulus ? "tbl-putih" : "tbl-utama"}" id="h-ulang">${lulus ? "Ulangi untuk bintang lebih" : "Coba lagi 🔁"}</button>
+      ${!lulus && adaMateri(id) ? `<button class="tbl tbl-putih" data-ke="materi" data-arg="${id}">📖 Pelajari materinya dulu</button>` : ""}
       <button class="tbl tbl-putih" data-ke="jalur" data-arg="${id}">Kembali ke jalur level</button></div></div>`;
   layar.querySelector("#h-lanjut")?.addEventListener("click", () => { bunyi.klik(); mulaiLevel(id, L + 1); });
   layar.querySelector("#h-ulang").addEventListener("click", () => { bunyi.klik(); mulaiLevel(id, L); });
@@ -414,7 +415,7 @@ function ulasUjian() {
       ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
       <div class="ulas-jawab"><b>Jawabanmu:</b><div>${jawabanTeks(s, x.j)}</div></div>
       <div class="contoh-kunci"><b>Kunci:</b><div>${s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ` : ""}${tulisKunci(s)}</div></div>
-      ${s.bahas ? `<div class="bahas-tes">💡 ${s.bahas}</div>` : ""}</div>`; }).join("") + "</details>";
+      ${htmlBahas(s, "bahas-tes")}</div>`; }).join("") + "</details>";
 }
 function tunjukPiala(antrean) {
   const [jenis, ikon, judul, teks] = antrean.shift(); bunyi.piala(); konfeti(3.2);
@@ -508,7 +509,7 @@ function ortuMateri(el) {
 }
 function isiLevelMisi(box, id) {
   const d = dataMisi(id);
-  box.innerHTML = Array.from({ length: 10 }, (_, i) => { const L = i + 1, t = TINGKAT[L], ada = new Set();
+  box.innerHTML = (adaMateri(id) ? `<div class="lv-baris"><span class="kt"><b>📖 Materi singkat &amp; contoh bertahap</b><small>Yang dilihat anak sebelum mengerjakan level</small></span><span class="lv-tombol"><button type="button" class="tbl tbl-biru tbl-kecil" data-ke="materi" data-arg="${id}">Buka</button></span></div>` : "") + Array.from({ length: 10 }, (_, i) => { const L = i + 1, t = TINGKAT[L], ada = new Set();
     for (let k = 0; k < 8; k++) ada.add(buatSoal(id, L, null).bentuk);
     const bentuk = Object.keys(BENTUK).filter(b => ada.has(b)).map(b => BENTUK[b]).join(", ");
     const status = L <= d.lv ? `<span class="lv-bintang" title="Bintang anak">${"⭐".repeat(d.bin[i])}${"☆".repeat(3 - d.bin[i])}</span>` : L === d.lv + 1 ? '<span class="lv-bintang kini">sedang</span>' : '<span class="lv-bintang">belum</span>';
@@ -520,7 +521,7 @@ function contohHtml(s) {
   const opsi = s.bentuk === "pg" || s.bentuk === "pgk" ? `<ol class="contoh-opsi" type="A">${s.opsi.map(o => `<li>${o}</li>`).join("")}</ol>` : "";
   const kunci = s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ${s.opsi[s.kunci]}` : s.bentuk === "pgk" ? s.opsi.map((o, i) => (s.kunci[i] ? `${"ABCDE"[i]}. ${o}` : "")).filter(Boolean).join("<br>") : tulisKunci(s);
   return `<div class="contoh-satu">${s.bacaan ? `<details class="contoh-bacaan"><summary>Lihat bacaan</summary><div class="bacaan">${s.bacaan}</div></details>` : ""}
-    ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}<div class="contoh-kunci"><b>Kunci:</b><div>${kunci}</div></div></div>`;
+    ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}<div class="contoh-kunci"><b>Kunci:</b><div>${kunci}</div></div>${htmlBahas(s, "bahas-tes")}</div>`;
 }
 
 const pilihanTol = pilih => Array.from({ length: TOLERANSI_MAKS + 1 }, (_, i) => `<option value="${i}" ${i === pilih ? "selected" : ""}>${i ? i + "× salah" : "Tanpa salah"}</option>`).join("");

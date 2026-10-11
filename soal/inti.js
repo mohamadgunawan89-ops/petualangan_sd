@@ -8,10 +8,16 @@
 
    Bentuk soal yang dikembalikan sebuah cetakan:
      { bentuk: "isian" | "pg" | "pgk" | "bs",
-       teks, gambar?, satuan?, petunjuk?, bahas?,
+       teks, gambar?, satuan?, petunjuk?, bahas?, langkah?,
        kunci (isian: {nilai} atau {p, q, sederhana}; pg: indeks;
               pgk/bs: larik benar/salah),
        opsi (pg/pgk) atau pernyataan (bs) }
+   langkah (Matematika, 11 Okt 2026): pembahasan bertahap, larik HTML satu langkah per butir; butir terakhir
+   menyebut jawabannya. Ditampilkan setelah menjawab (benar maupun salah); bahas = ringkasan satu kalimat.
+
+   MATERI[idMisi] (soal/materi-*.js): teori singkat & contoh bertahap sebelum mengerjakan level:
+     { ringkas: [{ judul, isi, gambar? }],              isi/gambar = HTML (gambar boleh SVG)
+       contoh:  [{ soal, gambar?, langkah: [HTML], jawab }] }
 */
 "use strict";
 
@@ -124,6 +130,7 @@ const POS = [
   { id: "nal", pulau: "bin", no: 3, judul: "Jurus Menalar", ikon: "🧠", ket: "Simpulan, amanat, fakta & opini" },
 ];
 const MISI = [];
+const MATERI = {};
 /* Level 1–5 hanya isian singkat. Cetakan berbentuk pilihan yang ditulis di level 1–5
    ditandai keTKA(...) dan otomatis dipindah ke level 6 (atau level yang disebut). */
 const keTKA = (f, L = 6) => Object.assign(f, { keLevel: L });
@@ -196,16 +203,20 @@ function bentukTKA(s, m, L) {
       const butir = kumpulan.map(t => { const b = ya(), kt = t.kunci;
         const nilai = b ? (kt.p !== undefined ? isiTitik(t, kt.p, kt.q) : isiTitik(t, kt.nilai))
           : (kt.p !== undefined ? isiTitik(t, ...pilih(pengecohPecahan(kt.p, kt.q, 1))) : isiTitik(t, pengecohAngka(kt.nilai, 1, 0, batasPengecoh(t))[0]));
-        return { t: t.teks.replace(/<br>/g, " ").replace("…", `<b>${nilai}</b>`), b }; });
-      if (L >= 8 && !butir.every(x => x.b) && butir.some(x => x.b)) return pgk("Pilih <b>semua</b> pernyataan yang benar.", butir, { bahas: kumpulan.map(t => t.bahas).filter(Boolean).join("<br>") });
-      return bs("Tentukan <b>Benar</b> atau <b>Salah</b> untuk setiap pernyataan.", butir, { bahas: kumpulan.map(t => t.bahas).filter(Boolean).join("<br>") });
+        return { t: t.teks.replace(/<br>/g, " ").replace("…", `<b>${nilai}</b>`), b, asal: t, benarnya: kt.p !== undefined ? isiTitik(t, kt.p, kt.q) : isiTitik(t, kt.nilai) }; });
+      const bahas = kumpulan.map(t => t.bahas).filter(Boolean).join("<br>"), pk = L >= 8 && !butir.every(x => x.b) && butir.some(x => x.b);
+      const q = pk ? pgk("Pilih <b>semua</b> pernyataan yang benar.", butir, { bahas }) : bs("Tentukan <b>Benar</b> atau <b>Salah</b> untuk setiap pernyataan.", butir, { bahas });
+      // Pembahasan bertahap: satu langkah per pernyataan, sesuai urutan yang tampil
+      q.langkah = (q.opsi || q.pernyataan).map((teks, i) => { const x = butir.find(y => y.t === teks) || butir[i], cara = x.asal.bahas || (x.asal.langkah || []).slice(-1)[0] || "";
+        return `${x.b ? "✔" : "✘"} Pernyataan ${i + 1} <b>${x.b ? (pk ? "benar, dipilih" : "Benar") : (pk ? "salah, tidak dipilih" : "Salah")}</b>${x.b ? "" : ` (seharusnya <b>${x.benarnya}</b>)`}. ${cara}`; });
+      return q;
     }
   }
   const benar = k.p !== undefined ? tulisNilai(s, k.p, k.q) : tulisNilai(s, k.nilai);
   const gUang = /Rp\s*…/.test(s.teks) && k.nilai >= 5000 ? 500 : 0;
   const salah = k.p !== undefined ? pengecohPecahan(k.p, k.q).map(([a, b]) => tulisNilai(s, a, b)) : pengecohAngka(k.nilai, 3, gUang, batasPengecoh(s)).map(v => tulisNilai(s, v));
   if (salah.length < 3) return s;   // tidak cukup pengecoh yang masuk akal: biarkan isian
-  return pg(s.teks, benar, salah, { gambar: s.gambar, petunjuk: s.petunjuk, bahas: s.bahas });
+  return pg(s.teks, benar, salah, { gambar: s.gambar, petunjuk: s.petunjuk, bahas: s.bahas, langkah: s.langkah });
 }
 
 /* ---------- Memeriksa jawaban isian ---------- */

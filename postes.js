@@ -231,7 +231,7 @@ function lUlasTes() {
       ${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}${opsi}
       <div class="ulas-jawab"><b>Jawabanmu:</b><div>${jawabanTeks(s, ULAS.jawab[k])}</div></div>
       <div class="contoh-kunci"><b>Kunci:</b><div>${s.bentuk === "pg" ? `${"ABCDE"[s.kunci]}. ` : ""}${tulisKunci(s)}</div></div>
-      ${s.bahas ? `<div class="bahas-tes">💡 ${s.bahas}</div>` : ""}</div>`; }).join("");
+      ${htmlBahas(s, "bahas-tes")}</div>`; }).join("");
   layar.innerHTML = `<div class="main-atas"><button class="tutup" id="u-kembali" aria-label="Kembali ke hasil">←</button><div class="info"><b>🔍 Pembahasan ${judulTes(t)}</b><span class="ket">${cariPulau(t.pulau).judul} · ${cakupanTes(t)}</span></div></div>
     <div class="baris-set" style="border:0"><span class="ket">${ULAS.saring ? "Hanya soal yang salah atau kosong" : "Semua soal"}</span><button class="tbl tbl-putih tbl-kecil" id="u-saring">${ULAS.saring ? "Tampilkan semua" : "Hanya yang salah"}</button></div>
     ${item || '<div class="kartu"><p class="ket" style="margin:0">Tidak ada soal yang salah. Sempurna! 🎉</p></div>'}

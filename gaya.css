@@ -545,3 +545,30 @@ canvas#konfeti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-e
 .lt-petunjuk-kata { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--tinta-2); }
 .lt-petunjuk-kata span { background: var(--langit); border-radius: 8px; padding: 2px 8px; color: var(--biru-tua); }
 .lt-label-hasil { font-weight: 800; color: var(--biru-tua); font-size: 14px; }
+
+/* ================= Materi & pembahasan bertahap Matematika (materi.js, 11 Okt 2026) ================= */
+.pembahasan { background: #fff; border-radius: var(--r2); padding: 12px 14px; margin-top: 10px; text-align: left; }
+.pb-judul { font-weight: 800; color: var(--biru-tua); margin-bottom: 6px; }
+ol.langkah { margin: 0; padding: 0; list-style: none; counter-reset: lk; display: grid; gap: 8px; }
+ol.langkah > li { counter-increment: lk; position: relative; padding: 8px 10px 8px 44px; background: var(--langit); border-radius: var(--r1); font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+ol.langkah > li::before { content: counter(lk); position: absolute; left: 8px; top: 7px; width: 28px; height: 28px; border-radius: 50%; background: var(--biru); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+ol.langkah > li:last-child { background: var(--hijau-muda); }
+ol.langkah > li:last-child::before { background: var(--hijau); }
+.umpan ol.langkah > li { animation: muncul .35s ease-out both; }
+.mt-langkah > li.muncul { animation: muncul .35s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .umpan ol.langkah > li, .mt-langkah > li.muncul { animation: none; } }
+.bahas-tes .langkah, .ulas-tes .pembahasan, .contoh-satu .pembahasan { margin-top: 8px; }
+.mt-kartu-jalur { border-color: var(--ungu); background: linear-gradient(135deg, var(--ungu-muda), #fff 75%); }
+.mt-kartu-jalur .lt-ikon { background: var(--ungu); }
+.mt-ringkas h3 { display: flex; align-items: center; gap: 10px; font-size: 20px; color: var(--gelap); margin-bottom: 8px; }
+.mt-no { width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--ungu); color: #fff; display: grid; place-items: center; font-size: 16px; }
+.mt-isi { font-size: 17px; line-height: 1.6; }
+.mt-isi p { margin: 0 0 8px; } .mt-isi ul, .mt-isi ol { margin: 4px 0 8px; padding-left: 22px; } .mt-isi li { margin: 2px 0; }
+.mt-isi .tabel-data { margin: 6px 0; }
+.mt-gambar { margin-top: 10px; }
+.mt-contoh .mt-label { font-weight: 800; color: var(--ungu); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+.mt-contoh .mt-langkah { margin-top: 12px; }
+.mt-jawab { margin-top: 12px; padding: 12px 14px; border-radius: var(--r2); background: var(--emas-muda); border: 2px solid var(--emas); font-size: 18px; animation: muncul .35s ease-out both; }
+.mt-aksi { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.mt-aksi [data-langkah] { flex: 1 1 180px; white-space: nowrap; }
+.mt-aksi [data-semua] { flex: none; }
