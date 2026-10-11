@@ -232,9 +232,19 @@ function lJalur(id) {
 
 /* ================= Bermain ================= */
 let M = null;
-function ambilSoal(id, L) {
-  const rw = new Set(S.riwayat[id] || []); let s, h;
-  for (let i = 0; i < 40; i++) { s = buatSoal(id, L, null); h = hashTeks(s.kunciUnik); if (!rw.has(h)) break; }
+/* dipakai = kalimat soal yang sudah muncul di level ini: soal dengan kalimat sama (hanya angka/gambar beda)
+   terlihat seperti soal yang diulang, jadi diutamakan kalimat lain bila misi itu punya */
+const kalimatSoal = s => (s.bacaan || "") + "|" + s.teks;
+function ambilSoal(id, L, dipakai) {
+  const rw = new Set(S.riwayat[id] || []); let s, h, cadangan = null;
+  for (let i = 0; i < 40; i++) {
+    s = buatSoal(id, L, null); h = hashTeks(s.kunciUnik);
+    if (rw.has(h)) continue;
+    if (!dipakai || !dipakai.has(kalimatSoal(s))) { cadangan = null; break; }
+    cadangan ||= [s, h];
+  }
+  if (cadangan) [s, h] = cadangan;
+  dipakai?.add(kalimatSoal(s));
   (S.riwayat[id] ||= []).push(h); if (S.riwayat[id].length > RIWAYAT_MAKS) S.riwayat[id].splice(0, S.riwayat[id].length - RIWAYAT_MAKS);
   return s;
 }
@@ -251,7 +261,7 @@ function mulaiHarianLangsung() {
 function soalBerikut() {
   if (M.i >= M.n) return selesaiLevel();
   const id = M.harian ? M.antrian[M.i].misi : M.misi, L = M.harian ? M.antrian[M.i].L : M.L;
-  M.soal = M.coba ? buatSoal(id, L, null) : ambilSoal(id, L); M.idKini = id; M.LKini = L; M.diperiksa = false; M.tSoal = Date.now();
+  M.soal = M.coba ? buatSoal(id, L, null) : ambilSoal(id, L, M.kalimat ||= new Set()); M.idKini = id; M.LKini = L; M.diperiksa = false; M.tSoal = Date.now();
   M.jawab = M.soal.bentuk === "isian" ? "" : M.soal.bentuk === "pg" ? null : M.soal.bentuk === "pgk" ? M.soal.opsi.map(() => false) : M.soal.pernyataan.map(() => null);
   lMain();
 }
