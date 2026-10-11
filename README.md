@@ -52,6 +52,11 @@ Dulu menumpang di database Tryout dan repo `smapmerdekasoreang99-star/game_tka_s
 berubah, kemajuan di perangkat (localStorage) tidak ikut: anak membuka situs baru → **🔗 Masukkan Kode Anak lain** →
 ketik Kode Anaknya, dan kemajuan dari server muncul kembali.
 
+Situs lama (`smapmerdekasoreang99-star.github.io/game_tka_sd/`) kini halaman **pengalih**: ia membuka situs baru
+sambil membawa kemajuan di perangkat itu lewat `#pindah=…` (diterima `terimaPindahan()` di `app.js` bila perangkat
+belum punya kemajuan di alamat baru). Repo lama diarsipkan; di folder ini namanya remote `lama`, sedangkan `origin`
+adalah repo baru (`git push` biasa).
+
 Bila suatu saat pindah lagi: jalankan semua berkas `database/migrations/` di server baru, salin isi tabel `pts_anak`,
 ganti `url`/`key` di `config.js`, dan ganti alamat di `jaga-supabase.yml`.
 
