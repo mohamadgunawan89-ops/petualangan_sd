@@ -34,6 +34,24 @@ kumpulkan piala. Halaman statis (GitHub Pages), kemajuan disimpan di perangkat d
 - Diuji: 66.000 soal (44 misi × 10 level × 150, dengan & tanpa suara) tanpa kunci keliru/opsi kembar;
   uji browser beranda, soal dengar, jawab benar, Pos Tes ketiga pulau, Dasbor Ortu.
 
+### Dengar & Baca (11 Okt 2026, `latih-inggris.js`)
+
+Meniru English Reading, sebagai **tambahan** di depan 10 level setiap misi Bahasa Inggris (kartu "🎧 Dengar & Baca" di jalur misi):
+
+1. **Dengarkan** seluruh teks (kalimat disorot saat dibacakan; kata bisa diketuk; kecepatan 0,6–1).
+2. **Baca & Koreksi**: anak membaca keras, `SpeechRecognition` (en-US) menilai tiap kata (hijau ≥ 85, kuning 60–84,
+   merah < 60); dicatat bila dibaca sampai habis, syarat **≥ 75%**. Kata yang lemah bisa didengar/diucapkan ulang.
+3. **5 sub level**, 10 soal: kosakata = Kenali · Dengar · Situasi · Lengkapi & susun · Ucapkan; pola = Pilih bentuk ·
+   Benar atau salah · Dengar · Susun kalimat · Ucapkan; bacaan = Kosakata · Dengar & pahami · Urutkan · Pemahaman ·
+   Ucapkan kalimat. Nilai = benar pada percobaan pertama; yang salah diulang dengan soal lain tanpa menambah nilai.
+   Sub level berikutnya terbuka bila **≥ 80%**. Ucapan kata lulus ≥ 70; kalimat lulus bila kata terlewat ≤ 20%.
+
+Pengaturan orang tua (`S.atur.ingDengar/ingBaca/ingUcap/ingSyarat`, bawaan nyala): wajib dengar, wajib Baca & Koreksi,
+sub level Ucapkan pakai mikrofon (mati = mengetik/menyusun), dan Level 1 baru terbuka setelah 5 sub level tuntas (hanya
+misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati otomatis. Kemajuan di `S.ing[idMisi]`
+(`d`, `dh`, `b`, `s[5]`), ikut tersinkron (gabung = nilai terbesar). Pos 7 "Teks Pendek" = Tahap 2 English Reading
+(3 pola + 7 bacaan), disalin oleh `node alat/salin-inggris.js`.
+
 ## Database (Supabase sendiri, sejak 11 Okt 2026)
 
 - Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).

@@ -19,6 +19,7 @@ POS.push(
   { id: "e-giat", pulau: "big", no: 4, judul: "Kegiatan & Dunia Sekitar", ikon: "⚽", ket: "Kata kerja, hobi, makanan, hewan" },
   { id: "e-tata", pulau: "big", no: 5, judul: "Kata Penting", ikon: "🧩", ket: "Kata sifat, kata tanya, penghubung, modal" },
   { id: "e-baca", pulau: "big", no: 6, judul: "Kalimat & Bacaan", ikon: "📘", ket: "Pola kalimat dan bacaan pendek" },
+  { id: "e-teks", pulau: "big", no: 7, judul: "Teks Pendek", ikon: "📨", ket: "Masa lalu, can/must, masa depan; cerita, resep, pengumuman, undangan, pesan" },
 );
 
 const EN = INGGRIS;
@@ -50,7 +51,9 @@ const IKON_EN = { greetings: "👋", pronouns: "🙋", "family-words": "👨‍�
   "verbs-1": "🏃", "verbs-2": "🛠️", "daily-activities": "🪥", hobbies: "⚽", "food-drinks": "🍚", "money-shopping": "🛒", weather: "🌦️", animals: "🐘", jobs: "👩‍⚕️",
   adjectives: "📏", "question-words": "❓", conjunctions: "🔗", modals: "🧰",
   "pola-i-am": "🙂", "pola-there-is": "📍", "pola-present": "🔁", "pola-want": "💭", "pola-questions": "💬",
-  "hello-budi": "👦", "my-family": "👪", "my-school": "🏫", "my-day": "🌞" };
+  "hello-budi": "👦", "my-family": "👪", "my-school": "🏫", "my-day": "🌞",
+  "pola-past": "⏪", "pola-can-must": "✅", "pola-future": "⏩", "best-friend": "👭", "a-rainy-morning": "🌧️", "holiday-pangandaran": "🏖️",
+  "make-tea": "🍵", announcement: "📢", "birthday-invitation": "🎂", "message-from-mom": "💌" };
 
 /* kata = { k: kata Inggris, a: arti, c: contoh, ca: arti contoh, lv } */
 const kataLevel = lv => lv.kosakata.map(w => ({ k: w[0], a: w[1], c: w[2], ca: w[3], lv: lv.id }));
@@ -189,7 +192,7 @@ function soalBacaanTKA(b, L) {
 const LEVEL_BACAAN = { 1: [BS_.kata], 2: [BS_.kata, BS_.kalimat], 3: [BS_.soal, BS_.kata], 4: [BS_.soal, BS_.kalimat], 5: [BS_.soal, BS_.kalimat] };
 const tingkatBacaan = id => { const b = enLevel(id), t = {}; for (let L = 1; L <= 10; L++) t[L] = L <= 5 ? LEVEL_BACAAN[L].map(f => () => f(b, L)) : [() => soalBacaanTKA(b, L)]; return t; };
 
-/* Urutan Tahap 1 sama dengan English Reading */
-EN.LEVEL.filter(l => l.tahap === 1 && (POLA_EN.includes(l.id) || BACAAN_EN.includes(l.id))).forEach(l =>
-  daftarMisi("e-baca", "en-" + l.id, l.pola ? l.judul.replace(/^Pattern:\s*/, "Pola: ") : `Bacaan: ${l.judul}`, IKON_EN[l.id] || "📘",
+/* Urutan Tahap 1 (Pos 6) dan Tahap 2 (Pos 7, 11 Okt 2026) sama dengan English Reading */
+EN.LEVEL.filter(l => (l.tahap === 1 || l.tahap === 2) && (l.pola || l.teks)).forEach(l =>
+  daftarMisi(l.tahap === 1 ? "e-baca" : "e-teks", "en-" + l.id, l.pola ? l.judul.replace(/^Pattern:\s*/, "Pola: ") : `Bacaan: ${l.judul}`, IKON_EN[l.id] || "📘",
     l.pola ? tingkatPola(l.id) : tingkatBacaan(l.id)));

@@ -12,7 +12,7 @@
 const TES_SOAL = 30, TES_MENIT = 75, TES_TUNTAS = 70, TES_RIWAYAT = 30, KUNCI_TES = "ptka_sd_tes";
 /* Bobot materi per pos (dibagi ulang sesuai pos yang diuji) */
 const BOBOT_TES = { bil: 12, alj: 5, ukr: 8, dat: 5, tem: 9, pah: 11, nal: 10,
-  "e-aku": 5, "e-angka": 6, "e-rumah": 4, "e-giat": 6, "e-tata": 3, "e-baca": 6 };   // Bahasa Inggris (11 Okt 2026)
+  "e-aku": 5, "e-angka": 6, "e-rumah": 4, "e-giat": 6, "e-tata": 3, "e-baca": 6, "e-teks": 6 };   // Bahasa Inggris (11 Okt 2026)
 /* Sebaran tingkat: 8 soal sulit, 16 setara TKA, 6 di atas TKA */
 const LEVEL_TES = [[7, 8], [8, 16], [9, 6]];
 const POS_TES = PULAU.flatMap(pl => { const ps = POS.filter(p => p.pulau === pl.id);

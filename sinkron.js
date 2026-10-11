@@ -8,7 +8,7 @@
 
 // Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
 const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
-const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
+const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
 let sedangSinkron = false, jedaSinkron = null;
 
 async function rpcPts(fn, arg) {
@@ -43,6 +43,11 @@ function gabungKemajuan(a, b) {
     const r = new Map(); for (const x of [...(a.posTes?.[id] || []), ...(b.posTes?.[id] || [])]) r.set(x.t, x);
     g.posTes[id] = [...r.values()].sort((p, q) => p.t - q.t).slice(-30);
   }
+  g.ing = {};   // Dengar & Baca Bahasa Inggris: nilai terbesar dari kedua perangkat
+  for (const id of new Set([...Object.keys(a.ing || {}), ...Object.keys(b.ing || {})])) {
+    const x = a.ing?.[id] || {}, y = b.ing?.[id] || {}, d = x.d || y.d ? 1 : 0;
+    g.ing[id] = { d, b: Math.max(x.b || 0, y.b || 0), s: [0, 1, 2, 3, 4].map(i => Math.max(x.s?.[i] || 0, y.s?.[i] || 0)), ...(d ? {} : { dh: [...new Set([...(x.dh || []), ...(y.dh || [])])] }) };
+  }
   g.koin = Math.max(a.koin || 0, b.koin || 0);
   const api = [a.api, b.api].filter(x => x && x.tgl).sort((p, q) => (p.tgl === q.tgl ? q.n - p.n : p.tgl < q.tgl ? 1 : -1))[0];
   g.api = api ? { ...api } : { n: 0, tgl: "" };
@@ -71,7 +76,7 @@ async function sinkronkan({ diam = true } = {}) {
     catch (e) { if (!diam) tampilPesan("⚠️ Kode Anak belum bisa dibuat: " + e.message, 4000); return false; }
     finally { sedangSinkron = false; }
   }
-  if (M || T) { S.sinkron.tertunda = true; return false; }   // jangan mengganti data saat anak mengerjakan soal atau Pos Tes
+  if (M || T || LT) { S.sinkron.tertunda = true; return false; }   // jangan mengganti data saat anak mengerjakan soal, Pos Tes, atau sub level Bahasa Inggris
   sedangSinkron = true;
   try {
     let srv;
@@ -81,11 +86,11 @@ async function sinkronkan({ diam = true } = {}) {
       await rpcPts("pts_pulihkan", { p_kode: S.sinkron.kode, p_data: dataKirim(S) });
       srv = { data: {} };
     }
-    if (M || T) { S.sinkron.tertunda = true; return false; }
+    if (M || T || LT) { S.sinkron.tertunda = true; return false; }
     const sebelum = JSON.stringify(dataKirim(S)), g = gabungKemajuan(S, srv.data || {});
     g.riwayat = S.riwayat; g.suara = S.suara; g.sinkron = S.sinkron;
     await rpcPts("pts_simpan", { p_kode: S.sinkron.kode, p_data: dataKirim(g) });
-    if (M || T) return false;
+    if (M || T || LT) return false;
     S = g; Object.assign(S.sinkron, { terakhir: Date.now(), tertunda: false, galat: "" }); simpanData(false);
     if (JSON.stringify(dataKirim(S)) !== sebelum) perbaruiTampilan();
     if (layarKini === "ortu") segarkanKartuSinkron();

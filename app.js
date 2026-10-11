@@ -43,7 +43,7 @@ let gagalSimpan = false;
 function simpanData(jadwal = true) { try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(S)); gagalSimpan = false; if (jadwal && typeof jadwalSinkron === "function") jadwalSinkron(); } catch (e) { gagalSimpan = true; tampilPesan("⚠️ Kemajuan belum bisa disimpan di perangkat ini."); } }
 /* Muat ulang dari penyimpanan supaya tab/halaman yang lama terbuka memakai kemajuan terbaru
    (dan tidak menimpa kemajuan anak dengan data lama). Tidak dilakukan saat sedang mengerjakan soal. */
-function segarkanData() { if (M || T || gagalSimpan) return false; const baru = muatData(); if (!baru.profil) return false; S = baru; return true; }
+function segarkanData() { if (M || T || LT || gagalSimpan) return false; const baru = muatData(); if (!baru.profil) return false; S = baru; return true; }
 
 const hariIni = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const selisihHari = (a, b) => Math.round((Date.parse(b + "T00:00:00") - Date.parse(a + "T00:00:00")) / 864e5);
@@ -143,10 +143,11 @@ function pasangKepala(kembali, arg) {
 }
 function pasangNav(aktif) { nav.hidden = !aktif; nav.querySelectorAll("button").forEach(b => { if (b.dataset.ke === aktif) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); }
 function tampil(nama_, arg) {
+  hentikanSuaraLatih();   // suara/mikrofon Dengar & Baca (latih-inggris.js) berhenti saat pindah layar
   if (nama_ !== "sambut") segarkanData();
   if (nama_ === "ortu" && !izinOrtu && S.peran !== "ortu") return mintaPin();   // PIN hanya di HP anak; HP orang tua langsung masuk
   izinOrtu = false; layarKini = nama_; argKini = arg; window.scrollTo(0, 0);
-  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
+  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, latih: lLatih, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-ke]"); if (b) { bunyi.klik(); tampil(b.dataset.ke, b.dataset.arg); } });
 function tampilPesan(t, ms = 2600) { document.querySelectorAll(".pesan").forEach(x => x.remove()); const d = document.createElement("div"); d.className = "pesan"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
@@ -211,7 +212,7 @@ function lPulau(pid) {
         ms.map(m => { const d = dataMisi(m.id), L = Math.min(10, d.lv + 1), done = misiSelesai(m.id), emas = S.piala["emas-" + m.id];
           const pips = d.bin.map((b, i) => `<i class="${b ? "b" + b : i === d.lv && !done ? "kini" : ""}">${i + 1}</i>`).join("");
           return `<button class="misi ${done ? "selesai" : ""}" data-ke="jalur" data-arg="${m.id}"><div class="ikon">${m.ikon}${done ? '<span class="centang">✓</span>' : ""}</div><div class="tengah"><h3>${m.judul}</h3><div class="pips">${pips}</div>
-            <div class="status">${done ? `Selesai! ⭐ ${bintangMisi(m.id)}/30${emas ? " · Piala emas!" : " · kumpulkan 30⭐ untuk piala emas"}` : `Level ${L} · ${TINGKAT[L][0]}`}</div></div><div class="kanan">${done ? pialaSVG(emas ? "emas" : "perunggu", m.ikon) : '<span style="font-size:26px">▶️</span>'}</div></button>`; }).join("") + kartuTesPulau(p);
+            <div class="status">${done ? `Selesai! ⭐ ${bintangMisi(m.id)}/30${emas ? " · Piala emas!" : " · kumpulkan 30⭐ untuk piala emas"}` : level1Terkunci(m.id) ? `🎧 Dengar &amp; Baca · ${subTuntas(m.id)}/5 sub level` : `Level ${L} · ${TINGKAT[L][0]}`}</div></div><div class="kanan">${done ? pialaSVG(emas ? "emas" : "perunggu", m.ikon) : '<span style="font-size:26px">▶️</span>'}</div></button>`; }).join("") + kartuTesPulau(p);
     }).join("");
 }
 
@@ -219,15 +220,17 @@ function lPulau(pid) {
 const XJALUR = [50, 74, 80, 62, 38, 22, 30, 54, 74, 50];
 function lJalur(id) {
   const m = cariMisi(id); if (!m) return tampil("beranda"); pasangKepala("pulau", m.pulau); pasangNav("beranda");
-  const d = dataMisi(id), H = 112, pts = XJALUR.map((x, i) => `${x} ${i * H + H / 2}`);
+  const d = dataMisi(id), H = 112, pts = XJALUR.map((x, i) => `${x} ${i * H + H / 2}`), kunci1 = level1Terkunci(id);   // Bahasa Inggris: Dengar & Baca dulu
   layar.innerHTML = `<div class="jalur-kepala"><div class="ikon-misi">${m.ikon}</div><h1>${m.judul}</h1><p class="ket">⭐ ${bintangMisi(id)}/30 · ${misiSelesai(id) ? (S.piala["emas-" + id] ? "🏆 Piala emas sudah didapat!" : "🏆 Piala didapat! Raih 30⭐ untuk piala emas.") : "Selesaikan Level 10 untuk mendapat piala 🏆"}</p></div>
+    ${misiInggris(id) ? kartuLatihJalur(id) : ""}
     <div class="jalur" style="height:${10 * H}px"><svg class="lintasan" viewBox="0 0 100 ${10 * H}" preserveAspectRatio="none" aria-hidden="true"><path d="M${pts.join(" L")}" vector-effect="non-scaling-stroke"/></svg>
-    ${XJALUR.map((x, i) => { const L = i + 1, b = d.bin[i], buka = L <= d.lv + 1, lulus = L <= d.lv, cls = lulus ? "lulus" : buka ? "buka" : "kunci";
+    ${XJALUR.map((x, i) => { const L = i + 1, b = d.bin[i], buka = L <= d.lv + 1 && !(L === 1 && kunci1), lulus = L <= d.lv, cls = lulus ? "lulus" : buka ? "buka" : "kunci";
       return `<div class="simpul-baris ${x > 50 ? "kanan" : "kiri"}" style="position:absolute;top:${i * H}px;left:0;right:0;height:${H}px"><button class="simpul ${cls} ${L === 10 ? "bos" : ""}" data-level="${L}" style="position:absolute;left:${x}%;transform:translateX(-50%)" aria-label="Level ${L}${buka ? "" : ", terkunci"}">
         ${buka ? (L === 10 ? "👑" : L) : "🔒"}${lulus ? `<span class="bintang-simpul">${"⭐".repeat(b)}${"☆".repeat(3 - b)}</span>` : ""}<span class="label-simpul ${TINGKAT[L][1]}">${TINGKAT[L][0]}</span></button></div>`; }).join("")}</div>`;
   layar.querySelector(".jalur").addEventListener("click", e => { const b = e.target.closest("[data-level]"); if (!b) return; const L = +b.dataset.level;
+    if (L === 1 && kunci1) { bunyi.salah(); tampilPesan("🎧 Selesaikan Dengar & Baca (5 sub level) dulu, ya!"); return; }
     if (L > d.lv + 1) { bunyi.salah(); tampilPesan("🔒 Selesaikan level sebelumnya dulu, ya!"); return; } bunyi.klik(); mulaiLevel(id, L); });
-  const kini = layar.querySelector(".simpul.buka"); if (kini) setTimeout(() => kini.scrollIntoView({ block: "center", behavior: "smooth" }), 120);
+  const kini = layar.querySelector(".simpul.buka"); if (kini && !kunci1) setTimeout(() => kini.scrollIntoView({ block: "center", behavior: "smooth" }), 120);
 }
 
 /* ================= Bermain ================= */
@@ -463,7 +466,8 @@ function ortuDasbor(el) {
   const tot = MISI.reduce((s, m) => s + dataMisi(m.id).total, 0), ben = MISI.reduce((s, m) => s + dataMisi(m.id).benar, 0);
   const logMinggu = S.log.filter(x => Date.now() - x.t < 7 * 864e5), minggu = logMinggu.length;
   const detikTotal = MISI.reduce((s, m) => s + (dataMisi(m.id).detik || 0), 0), detikMinggu = logMinggu.reduce((s, x) => s + (x.dt || 0), 0);
-  const posisi = (m, d) => (misiSelesai(m.id) ? "Selesai 🏆" : !d.lv && !d.total ? "–" : `Level ${d.lv + 1}<small>${d.lv} lulus</small>`);
+  const posisi = (m, d) => (misiSelesai(m.id) ? "Selesai 🏆" : level1Terkunci(m.id) ? `🎧 ${subTuntas(m.id)}/5<small>Dengar &amp; Baca${ingLihat(m.id).b ? ` · baca ${ingLihat(m.id).b}%` : ""}</small>`
+    : !d.lv && !d.total ? "–" : `Level ${d.lv + 1}<small>${d.lv} lulus</small>`);
   const baris = PULAU.map(p => `<tr class="kelompok"><td colspan="5">${p.ikon} ${p.judul}</td></tr>` + misiPulau(p.id).map(m => { const d = dataMisi(m.id); return `<tr><td>${m.ikon} ${m.judul}</td><td class="angka posisi">${posisi(m, d)}</td><td class="angka">${bintangMisi(m.id)}</td><td class="angka posisi">${d.total ? `${Math.round(d.benar / d.total * 100)}%<small>${d.total - d.benar}× salah</small>` : "–"}</td><td class="angka">${lamaTeks(d.detik)}</td></tr>`; }).join("")).join("");
   const jamTgl = x => { const d = new Date(x); return `${tglIndo(hariIni(d))}, ${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`; };
   const akhir = S.log.slice(-8).reverse().map(x => { const m = cariMisi(x.m); if (!m) return ""; const hasil = x.lulus === undefined ? `${x.b} benar` : x.lulus ? `✅ lulus · ${x.b}/${x.n} benar langsung` : "belum lulus";
@@ -531,6 +535,13 @@ function ortuAtur(el) {
       <div class="baris-set" id="o-tolu-baris"${atur().ujian ? "" : ' style="opacity:.5"'}><label for="o-tolu"><b>Toleransi kesalahan mode ujian</b><div class="ket">Lewat batas, level belum lulus</div></label><select id="o-tolu" class="isian-teks" style="max-width:160px;min-height:44px">${pilihanTol(atur().tolUjian)}</select></div>
       <div class="baris-set" id="o-ulang-baris"${atur().ujian ? ' style="opacity:.5"' : ""}><span><b>Ulangi nomor yang salah</b><div class="ket">Anak mengerjakan soal serupa di nomor itu sampai benar (hanya mode belajar)</div></span><button class="tbl tbl-kecil ${atur().ulang ? "tbl-hijau" : "tbl-putih"}" id="o-ulang" aria-pressed="${atur().ulang}">${atur().ulang ? "✅ Nyala" : "⏭️ Mati"}</button></div>
       <div class="baris-set"><b>Suara</b><button class="tbl tbl-kecil ${S.suara ? "tbl-hijau" : "tbl-putih"}" id="o-suara">${S.suara ? "🔊 Nyala" : "🔇 Mati"}</button></div>
+      <h3 style="margin-top:18px">🌍 Bahasa Inggris · Dengar &amp; Baca</h3>
+      ${[["dengar", "Wajib dengar seluruh teks", "Sebelum sub level 1 terbuka"],
+        ["baca", `Wajib Baca &amp; Koreksi ≥ ${ING_LULUS_BACA}%`, "Anak membaca keras, dinilai mikrofon. Matikan bila kelas ramai atau mikrofon HP kurang baik"],
+        ["ucap", "Sub level Ucapkan memakai mikrofon", "Mati: diganti mengetik atau menyusun kata"],
+        ["syarat", "Level 1 terbuka setelah Dengar &amp; Baca tuntas", "Hanya untuk misi yang belum dimulai"]].map(([k, j, ket]) =>
+        `<div class="baris-set"><span><b>${j}</b><div class="ket">${ket}</div></span><button class="tbl tbl-kecil ${aturIng()[k] ? "tbl-hijau" : "tbl-putih"}" data-ing="${k}" aria-pressed="${aturIng()[k]}">${aturIng()[k] ? "✅ Nyala" : "⏭️ Mati"}</button></div>`).join("")}
+      ${bisaMikEN() ? "" : '<p class="ket">ℹ️ Peramban ini tidak punya pengenal suara: langkah mikrofon dilewati otomatis. Pakai Chrome di Android untuk fitur bicara.</p>'}
       <button class="tbl tbl-biru tbl-lebar" id="o-simpan" style="margin-top:12px">Simpan pengaturan</button></div>
     <div class="kartu" id="kartu-sinkron">${isiKartuSinkron()}</div>
     <div class="kartu"><h3>Cadangan kemajuan</h3><p class="ket">Kemajuan tersimpan di peramban perangkat ini. Unduh cadangan secara berkala, atau untuk pindah ke perangkat lain.</p>
@@ -541,12 +552,15 @@ function ortuAtur(el) {
   $("#o-suara").addEventListener("click", e => { S.suara = !S.suara; e.target.textContent = S.suara ? "🔊 Nyala" : "🔇 Mati"; e.target.className = "tbl tbl-kecil " + (S.suara ? "tbl-hijau" : "tbl-putih"); simpanData(); bunyi.klik(); });
   let ulang = atur().ulang, ujian = atur().ujian;
   $("#o-ujian").addEventListener("click", e => { ujian = !ujian; e.target.textContent = ujian ? "📝 Ujian" : "📖 Belajar"; e.target.className = "tbl tbl-kecil " + (ujian ? "tbl-biru" : "tbl-putih"); e.target.setAttribute("aria-pressed", ujian); ["#o-ulang-baris", "#o-tol-baris"].forEach(q => $(q).style.opacity = ujian ? ".5" : ""); $("#o-tolu-baris").style.opacity = ujian ? "" : ".5"; bunyi.klik(); });
+  const ing = aturIng();
+  el.querySelectorAll("[data-ing]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.ing; ing[k] = !ing[k];
+    b.textContent = ing[k] ? "✅ Nyala" : "⏭️ Mati"; b.className = "tbl tbl-kecil " + (ing[k] ? "tbl-hijau" : "tbl-putih"); b.setAttribute("aria-pressed", ing[k]); bunyi.klik(); }));
   $("#o-ulang").addEventListener("click", e => { ulang = !ulang; e.target.textContent = ulang ? "✅ Nyala" : "⏭️ Mati"; e.target.className = "tbl tbl-kecil " + (ulang ? "tbl-hijau" : "tbl-putih"); e.target.setAttribute("aria-pressed", ulang); bunyi.klik(); });
   $("#o-simpan").addEventListener("click", () => { const n = $("#o-nama").value.trim(); if (!n) return tampilPesan("Nama tidak boleh kosong.");
     const soal = +$("#o-soal").value, tol = +$("#o-tol").value, tolU = +$("#o-tolu").value;
     if (tol >= soal) return tampilPesan("Toleransi mode belajar harus lebih kecil dari jumlah soal.");
     if (tolU >= soal) return tampilPesan("Toleransi mode ujian harus lebih kecil dari jumlah soal.");
-    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan("✅ Pengaturan disimpan"); });
+    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian, ingDengar: ing.dengar, ingBaca: ing.baca, ingUcap: ing.ucap, ingSyarat: ing.syarat }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan("✅ Pengaturan disimpan"); });
   $("#o-unduh").addEventListener("click", async () => { const nm = `petualangan-tka-${S.profil.nama.replace(/\W+/g, "-").toLowerCase()}-${hariIni()}.json`; try { await simpanBerkas(JSON.stringify(S), nm, "application/json"); tampilPesan(pesanSimpan("diunduh", nm), 4000); } catch (e) { tampilPesan("Unduhan gagal. Jika memakai VPN atau ekstensi peramban, matikan dulu lalu coba lagi.", 5000); } });
   $("#o-pulih").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const x = JSON.parse(r.result); if (x.v !== 1 || !x.profil) throw 0;
       dialog(`<div style="font-size:48px">⬆️</div><h2>Pulihkan cadangan?</h2><p class="ket">Kemajuan <b>${esc(x.profil.nama)}</b> akan menggantikan kemajuan di perangkat ini.</p>`, [["Ya, pulihkan", "tbl-utama", () => { S = Object.assign(bawaan(), x); simpanData(); tampilPesan("✅ Cadangan dipulihkan"); tampil("beranda"); }], ["Batal", "tbl-putih", null]]);
