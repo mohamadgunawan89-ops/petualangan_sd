@@ -812,3 +812,17 @@ ol.langkah > li:last-child::before { background: var(--hijau); }
 .rc-seg.hariH, .rc-legenda i.hariH { background: var(--emas); }
 .rc-bendera-tengah { position: absolute; top: -26px; margin-left: -10px; font-size: 22px; }
 .rc-tg.bebas, .rc-hari.bebas { background: var(--kertas-2); color: var(--tinta-3); }
+.rc-tabungan { border: 3px solid var(--emas); }
+.rc-tab-angka { font-family: var(--huruf-judul); font-weight: 800; font-size: 20px; padding: 2px 12px; border-radius: 999px; background: var(--kertas-2); color: var(--tinta-2); }
+.rc-tab-angka.ada { background: var(--emas); color: #3A2A06; }
+.rc-mode { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.rc-mode button { display: grid; gap: 4px; text-align: left; padding: 12px; border-radius: var(--r2); border: 3px solid var(--garis-2); background: #fff; min-height: 44px; }
+.rc-mode button b { font-size: 16px; color: var(--gelap); } .rc-mode button span { font-size: 13px; font-weight: 600; color: var(--tinta-2); line-height: 1.4; }
+.rc-mode button[aria-checked="true"] { border-color: var(--biru); background: var(--biru-muda); box-shadow: 0 3px 0 var(--biru); }
+.rc-sub { font-size: 16px; color: var(--gelap); margin: 14px 0 8px; }
+.rc-libur-pilih { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.rc-libur-pilih button { display: grid; justify-items: center; gap: 1px; padding: 6px 2px; min-height: 58px; border-radius: var(--r1); border: 2px solid var(--garis-2); background: var(--biru-muda); }
+.rc-libur-pilih button span { font-size: 11px; font-weight: 800; color: var(--tinta-2); } .rc-libur-pilih button b { font-family: var(--huruf-judul); font-size: 18px; color: var(--gelap); line-height: 1; }
+.rc-libur-pilih button i { font-style: normal; font-size: 12px; font-weight: 800; color: var(--biru-tua); min-height: 1.2em; }
+.rc-libur-pilih button[aria-pressed="true"] { background: var(--hijau-muda); border-color: var(--hijau); }
+.rc-tg.libur:has(i) { background: var(--hijau-muda); }

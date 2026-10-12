@@ -83,6 +83,9 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
   (hari terlewat dibagi ke hari berikutnya); tugas hari ini dibekukan di `S.rencanaHari` (lokal). Tampilan: hitung
   mundur & cincin kesiapan, status sesuai jadwal (`S.rencanaAwal`), target hari ini (tercentang otomatis), garis waktu
   fase, minggu ini, kalender belajar (dilipat per bulan), dan ringkasan.
+- **Tabungan belajar** (kartu 💰 di Rencana): kelebihan dari jadwal (`statusJadwal().selisih`) diserahkan ke anak —
+  🌴 pilih hari libur (`S.liburPilihan`, 14 hari ke depan; hari itu tanpa target) atau 🚀 mode percepat
+  (`S.rencanaMode`: target harian awal dipertahankan, materi selesai lebih cepat). Bawaan: kelebihan meringankan target.
 - **Bahasa Inggris dalam rencana** (opsional, program belajar jangka panjang): `S.atur.ingTarget` (target selesai; boleh
   sesudah TKA, bertahun-tahun — rentang rencana sampai tanggal paling akhir, juga tanpa tanggal TKA),
   `ingHari` (hari latihan), `ingSampai` (cakupan: Dengar & Baca saja / + Level 1–5 / semua level). Sub level Dengar & Baca
