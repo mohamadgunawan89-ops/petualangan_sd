@@ -167,8 +167,9 @@ function lRencana() {
 
     <div class="kartu"><h2 class="rc-h2">📆 Minggu ini</h2><div class="rc-minggu">${mingguIni(r)}</div></div>
 
-    <div class="kartu"><div class="rc-judul"><h2 class="rc-h2">🗓️ Kalender belajar</h2><span class="ket">Ketuk tanggal untuk melihat tugasnya</span></div>
-      <div id="rc-kalender">${kalenderRencana(r)}</div><div id="rc-detail" class="rc-detail"></div>
+    <div class="kartu"><div class="rc-judul"><h2 class="rc-h2">🗓️ Kalender belajar</h2><button type="button" class="tbl tbl-putih tbl-kecil" id="rc-lipat-semua">Buka semua</button></div>
+      <p class="ket" style="margin:0 0 6px">Ketuk nama bulan untuk membuka atau menutup. Ketuk tanggal untuk melihat tugasnya.</p>
+      <div id="rc-kalender">${kalenderRencana(r)}</div>
       <div class="rc-legenda kecil"><span><i class="belajar"></i>Belajar</span><span><i class="sim"></i>Simulasi TKA</span><span><i class="libur"></i>Libur</span><span><i class="rehat"></i>Rehat</span><span><i class="hariH"></i>Hari H</span></div></div>
 
     <div class="kartu"><h2 class="rc-h2">📊 Ringkasan rencana</h2>
@@ -185,6 +186,10 @@ function lRencana() {
   const kal = layar.querySelector("#rc-kalender");
   kal.addEventListener("click", e => { const b = e.target.closest("[data-tgl]"); if (!b) return; bunyi.klik(); pilihTgl = b.dataset.tgl;
     kal.querySelectorAll(".dipilih").forEach(x => x.classList.remove("dipilih")); b.classList.add("dipilih"); tampilDetail(r, pilihTgl); });
+  const lipat = layar.querySelector("#rc-lipat-semua"), semua = () => [...kal.querySelectorAll("details")];
+  const segarLipat = () => { lipat.textContent = semua().every(d => d.open) ? "Tutup semua" : "Buka semua"; };
+  lipat.addEventListener("click", () => { bunyi.klik(); const buka = !semua().every(d => d.open); semua().forEach(d => (d.open = buka)); segarLipat(); });
+  kal.addEventListener("toggle", segarLipat, true);
   tampilDetail(r, pilihTgl && pilihTgl >= hariIni() && pilihTgl <= S.tka ? pilihTgl : hariIni());
 }
 const tglRingkas = t => { const [, m, d] = t.split("-").map(Number); return `${d} ${["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][m - 1]}`; };
@@ -200,21 +205,33 @@ function mingguIni(r) {
       ikon = h.jenis === "sim" ? "📝" : h.jenis === "libur" ? "😴" : h.jenis === "rehat" ? "😌" : nL ? "📘" : "🔁"; ket = h.jenis === "sim" ? "simulasi" : h.jenis === "libur" ? "libur" : h.jenis === "rehat" ? "rehat" : nL ? `${nL} level` : "ulang"; kls = h.jenis; }
     return `<div class="rc-hari ${kls} ${kini ? "kini" : ""}"><span class="rc-hari-nama">${HARI_SINGKAT[i]}</span><span class="rc-hari-tgl">${+tgl.slice(8)}</span><span class="rc-hari-ikon">${ikon}</span><span class="rc-hari-ket">${ket}</span></div>`; }).join("");
 }
+/* Kalender dilipat per bulan (12 Okt 2026): bulan ini terbuka, bulan lain hanya judul & ringkasan; rincian tanggal
+   tampil di dalam bulannya sendiri supaya tidak perlu menggulir jauh */
+const NAMA_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 function kalenderRencana(r) {
-  const peta = Object.fromEntries(r.hari.map(h => [h.tgl, h])), awal = hariIni(), akhir = S.tka;
-  let html = "", bulan = "";
-  for (let t = tambahHari(awal, -hariKe(awal)); t <= akhir || hariKe(t) !== 0; t = tambahHari(t, 1)) {
-    const b = t.slice(0, 7);
-    if (hariKe(t) === 0 && b !== bulan && (t <= akhir)) { if (bulan) html += "</div>"; bulan = b; const [y, m] = b.split("-").map(Number);
-      html += `<div class="rc-bulan">${["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][m - 1]} ${y}</div><div class="rc-kal">${HARI_SINGKAT.map(x => `<span class="rc-nama">${x}</span>`).join("")}`; }
-    const h = peta[t], kls = t === akhir ? "hariH" : t < awal ? "dulu" : h ? h.jenis : "luar";
-    const nL = h ? h.tugas.filter(x => x.jenis === "level").reduce((s, x) => s + x.sampai - x.dari + 1, 0) : 0;
-    html += t < awal || t > akhir ? `<span class="rc-tg luar"></span>` : `<button type="button" class="rc-tg ${kls} ${t === awal ? "kini" : ""}" data-tgl="${t}" aria-label="${tglIndo(t)}">${+t.slice(8)}${kls === "sim" ? "<i>📝</i>" : kls === "hariH" ? "<i>🏁</i>" : nL ? `<i>${nL}</i>` : ""}</button>`;
+  const peta = Object.fromEntries(r.hari.map(h => [h.tgl, h])), awal = hariIni(), akhir = S.tka, bulanBuka = (pilihTgl && pilihTgl >= awal && pilihTgl <= akhir ? pilihTgl : awal).slice(0, 7);
+  let html = "";
+  for (let b = awal.slice(0, 7); b <= akhir.slice(0, 7); b = tambahHari(b + "-01", 32).slice(0, 7)) {
+    const [y, m] = b.split("-").map(Number), jml = new Date(y, m, 0).getDate(), di = r.hari.filter(h => h.tgl.startsWith(b));
+    const nB = di.filter(h => h.jenis === "belajar").length, nS = di.filter(h => h.jenis === "sim").length;
+    const nL = di.reduce((s, h) => s + h.tugas.filter(x => x.jenis === "level").reduce((a, x) => a + x.sampai - x.dari + 1, 0), 0);
+    html += `<details class="rc-lipat" data-bulan="${b}" ${b === bulanBuka ? "open" : ""}><summary><span class="rc-bulan-nama">${NAMA_BULAN[m - 1]} ${y}</span>
+      <span class="rc-bulan-ring">${nB ? `<span>📘 ${nB} hari${nL ? ` · ${nL} level` : ""}</span>` : ""}${nS ? `<span>📝 ${nS}</span>` : ""}${b === akhir.slice(0, 7) ? "<span>🏁 TKA</span>" : ""}</span></summary>
+      <div class="rc-kal">${HARI_SINGKAT.map(x => `<span class="rc-nama">${x}</span>`).join("")}${'<span class="rc-tg luar"></span>'.repeat(hariKe(b + "-01"))}`;
+    for (let d = 1; d <= jml; d++) {
+      const t = `${b}-${String(d).padStart(2, "0")}`, h = peta[t];
+      if (t < awal || t > akhir) { html += `<span class="rc-tg ${t < awal ? "dulu" : "luar"}">${t < awal ? d : ""}</span>`; continue; }
+      const kls = t === akhir ? "hariH" : h ? h.jenis : "luar", n = h ? h.tugas.filter(x => x.jenis === "level").reduce((s, x) => s + x.sampai - x.dari + 1, 0) : 0;
+      html += `<button type="button" class="rc-tg ${kls} ${t === awal ? "kini" : ""} ${t === pilihTgl ? "dipilih" : ""}" data-tgl="${t}" aria-label="${tglIndo(t)}">${d}${kls === "sim" ? "<i>📝</i>" : kls === "hariH" ? "<i>🏁</i>" : n ? `<i>${n}</i>` : ""}</button>`;
+    }
+    html += `</div><div class="rc-detail" data-detail="${b}"></div></details>`;
   }
-  return html + "</div>";
+  return html;
 }
 function tampilDetail(r, tgl) {
-  const el = layar.querySelector("#rc-detail"); if (!el) return;
+  layar.querySelectorAll(".rc-detail").forEach(x => (x.innerHTML = ""));
+  const el = layar.querySelector(`.rc-detail[data-detail="${tgl.slice(0, 7)}"]`); if (!el) return;
+  el.closest("details").open = true;
   const h = r.hari.find(x => x.tgl === tgl);
   const isi = tgl === S.tka ? "<p>🏁 <b>Hari TKA!</b> Sarapan, datang lebih awal, baca soal pelan-pelan, dan periksa kembali jawabanmu.</p>"
     : !h ? "" : h.jenis === "libur" ? "<p>😴 Libur belajar. Istirahat dan bermain.</p>" : h.jenis === "rehat" ? "<p>😌 Rehat sebelum TKA: tidur cukup, siapkan alat tulis, jangan belajar terlalu berat.</p>"

@@ -795,3 +795,13 @@ ol.langkah > li:last-child::before { background: var(--hijau); }
 @media (max-width: 380px) { .rc-h { font-size: 44px; } .rc-cincin { width: 92px; height: 92px; } .rc-cincin > div { width: 72px; height: 72px; } }
 .rc-titik-sim { position: absolute; top: -9px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--ungu); border: 1.5px solid #fff; }
 .rc-kini.kiri span { left: 0; transform: none; } .rc-kini.kanan span { left: auto; right: 0; transform: none; }
+.rc-lipat { border: 2px solid var(--garis); border-radius: var(--r2); margin: 8px 0; background: #fff; overflow: hidden; }
+.rc-lipat > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; min-height: 44px; background: var(--kertas-2); }
+.rc-lipat > summary::-webkit-details-marker { display: none; }
+.rc-bulan-nama { font-family: var(--huruf-judul); font-weight: 800; font-size: 17px; color: var(--gelap); display: flex; align-items: center; gap: 8px; }
+.rc-bulan-nama::before { content: "▸"; color: var(--biru); transition: transform .2s; display: inline-block; }
+.rc-lipat[open] .rc-bulan-nama::before { transform: rotate(90deg); }
+.rc-bulan-ring { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; font-weight: 700; color: var(--tinta-2); }
+.rc-lipat .rc-kal { padding: 10px 8px 8px; }
+.rc-lipat .rc-detail { margin: 0 8px 10px; }
+.rc-tg.dulu { background: transparent; color: var(--tinta-3); font-weight: 600; opacity: .55; }
