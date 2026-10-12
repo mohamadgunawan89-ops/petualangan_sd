@@ -48,6 +48,13 @@ function gabungKemajuan(a, b) {
     const x = a.ing?.[id] || {}, y = b.ing?.[id] || {}, d = x.d || y.d ? 1 : 0;
     g.ing[id] = { d, b: Math.max(x.b || 0, y.b || 0), s: [0, 1, 2, 3, 4].map(i => Math.max(x.s?.[i] || 0, y.s?.[i] || 0)), ...(d ? {} : { dh: [...new Set([...(x.dh || []), ...(y.dh || [])])] }) };
   }
+  // Rencana belajar (12 Okt 2026): pilihan libur & mode → yang terbaru; catatan harian → digabung per tanggal
+  const ra = a.waktu?.rencana || 0, rb = b.waktu?.rencana || 0;
+  if (rb > ra) { g.liburPilihan = b.liburPilihan || []; g.rencanaMode = b.rencanaMode; }
+  g.waktu = { ...(g.waktu || {}), rencana: Math.max(ra, rb) };
+  const ca = a.rencanaCatatan || {}, cb = b.rencanaCatatan || {};
+  g.rencanaCatatan = Object.fromEntries([...new Set([...Object.keys(ca), ...Object.keys(cb)])].sort().slice(-60).map(k => {
+    const x = ca[k], y = cb[k]; return [k, !x ? y : !y ? x : (y.s > x.s || (y.s === x.s && y.t > x.t) ? y : x)]; }));
   g.koin = Math.max(a.koin || 0, b.koin || 0);
   const api = [a.api, b.api].filter(x => x && x.tgl).sort((p, q) => (p.tgl === q.tgl ? q.n - p.n : p.tgl < q.tgl ? 1 : -1))[0];
   g.api = api ? { ...api } : { n: 0, tgl: "" };

@@ -83,6 +83,10 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
   (hari terlewat dibagi ke hari berikutnya); tugas hari ini dibekukan di `S.rencanaHari` (lokal). Tampilan: hitung
   mundur & cincin kesiapan, status sesuai jadwal (`S.rencanaAwal`), target hari ini (tercentang otomatis), garis waktu
   fase, minggu ini, kalender belajar (dilipat per bulan), dan ringkasan.
+- **Dasbor Ortu · Target vs kemajuan nyata** (`htmlRencanaOrtu`): target sampai hari ini vs yang dikerjakan (level TKA,
+  tugas Bahasa Inggris), status, kesiapan, dan catatan 14 hari (`S.rencanaCatatan`: target & dikerjakan per hari,
+  dicatat saat aplikasi dibuka; ikut tersinkron, digabung per tanggal). Pilihan libur & mode digabung menurut
+  `S.waktu.rencana` (yang terbaru menang). Garis waktu TKA dan program Bahasa Inggris dipisah menjadi dua kartu.
 - **Tabungan belajar** (kartu 💰 di Rencana): kelebihan dari jadwal (`statusJadwal().selisih`) diserahkan ke anak —
   🌴 pilih hari libur (`S.liburPilihan`, 14 hari ke depan; hari itu tanpa target) atau 🚀 mode percepat
   (`S.rencanaMode`: target harian awal dipertahankan, materi selesai lebih cepat). Bawaan: kelebihan meringankan target.
