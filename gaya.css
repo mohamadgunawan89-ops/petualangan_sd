@@ -805,3 +805,10 @@ ol.langkah > li:last-child::before { background: var(--hijau); }
 .rc-lipat .rc-kal { padding: 10px 8px 8px; }
 .rc-lipat .rc-detail { margin: 0 8px 10px; }
 .rc-tg.dulu { background: transparent; color: var(--tinta-3); font-weight: 600; opacity: .55; }
+.rc-hero-ing { background: radial-gradient(circle at 85% 15%, rgba(255,255,255,.25), transparent 45%), linear-gradient(135deg, #0F6E6E, var(--tosca) 60%, #4FC3A1); }
+.rc-hero-ing .rc-label { color: #E0FFF6; } .rc-hero-ing .rc-h { color: #FFF4D2; } .rc-hero-ing .rc-cincin { background: conic-gradient(#FFF4D2 calc(var(--p) * 1%), rgba(255,255,255,.22) 0); } .rc-hero-ing .rc-cincin > div { background: #0F5E5E; }
+.rc-hero-ing.kecil { padding: 14px 18px; } .rc-hero-ing.kecil .rc-h { font-size: 38px; } .rc-hero-ing.kecil .rc-cincin { width: 84px; height: 84px; } .rc-hero-ing.kecil .rc-cincin > div { width: 64px; height: 64px; } .rc-hero-ing.kecil .rc-cincin b { font-size: 20px; }
+.rc-seg.ing, .rc-legenda i.ing { background: var(--oranye); }
+.rc-seg.hariH, .rc-legenda i.hariH { background: var(--emas); }
+.rc-bendera-tengah { position: absolute; top: -26px; margin-left: -10px; font-size: 22px; }
+.rc-tg.bebas, .rc-hari.bebas { background: var(--kertas-2); color: var(--tinta-3); }

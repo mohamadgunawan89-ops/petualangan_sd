@@ -83,7 +83,8 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
   (hari terlewat dibagi ke hari berikutnya); tugas hari ini dibekukan di `S.rencanaHari` (lokal). Tampilan: hitung
   mundur & cincin kesiapan, status sesuai jadwal (`S.rencanaAwal`), target hari ini (tercentang otomatis), garis waktu
   fase, minggu ini, kalender belajar (dilipat per bulan), dan ringkasan.
-- **Bahasa Inggris dalam rencana** (opsional): isi `S.atur.ingTarget` (target selesai, paling lambat H-1),
+- **Bahasa Inggris dalam rencana** (opsional, program belajar jangka panjang): `S.atur.ingTarget` (target selesai; boleh
+  sesudah TKA, bertahun-tahun — rentang rencana sampai tanggal paling akhir, juga tanpa tanggal TKA),
   `ingHari` (hari latihan), `ingSampai` (cakupan: Dengar & Baca saja / + Level 1–5 / semua level). Sub level Dengar & Baca
   dihitung 2 tugas. Dijadwalkan lebih dulu, tetapi selama materi TKA masih ada paling banyak separuh waktu hari itu;
   bila tidak muat, ringkasan memberi perkiraan selesai dan menit yang dibutuhkan.
