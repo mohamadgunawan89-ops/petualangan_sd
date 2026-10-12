@@ -69,6 +69,21 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
   "Pelajari materinya dulu".
 - Pemeriksa: `node alat/cek-langkah.js [bil|alj|ukr|dat] [sampel]` (langkah ada, tag seimbang, materi lengkap).
 
+## Pos TKA & Rencana Belajar (12 Okt 2026)
+
+- **Pos TKA** (`postes.js`): pos terakhir Pulau Matematika dan Bahasa Indonesia (mapel TKA SD/MI), 10 paket
+  Simulasi TKA per mapel. Acuan kerangka asesmen TKA SD/MI (Perkaban BSKAP No. 047/H/AN/2025): 30 soal, 75 menit;
+  pilihan ganda, PG kompleks, benar–salah (tanpa isian). Elemen & jumlah soal di `KISI_TKA`/`BOBOT_TES`, tingkat di
+  `LEVEL_TKA` (6 mudah, 8 sedang, 12 setara TKA, 4 HOTS), sasaran bentuk di `BENTUK_TKA`. Soal tiap paket tetap (benih
+  acak dari id paket) supaya nilai bisa dibandingkan. Selalu terbuka. Nilai 70+ = tuntas (piala perak); kesepuluh
+  paket tuntas = piala emas "Juara Simulasi TKA". Bahasa Inggris tidak mendapat Pos TKA (tidak diujikan di TKA SD).
+- **Rencana Belajar** (`rencana.js`, tab 📅 Rencana + kartu "Target hari ini" di beranda): dari tanggal TKA dan
+  pengaturan orang tua (menit per hari, hari belajar, hari simulasi) disusun target level harian Matematika & Bahasa
+  Indonesia, jadwal 20 paket simulasi menjelang TKA, dan H-1 rehat. Disusun ulang setiap hari dari kemajuan nyata
+  (hari terlewat dibagi ke hari berikutnya); tugas hari ini dibekukan di `S.rencanaHari` (lokal). Tampilan: hitung
+  mundur & cincin kesiapan, status sesuai jadwal (`S.rencanaAwal`), target hari ini (tercentang otomatis), garis waktu
+  fase, minggu ini, kalender belajar, dan ringkasan.
+
 ## Database (Supabase sendiri, sejak 11 Okt 2026)
 
 - Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).

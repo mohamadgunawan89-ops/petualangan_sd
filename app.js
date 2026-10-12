@@ -147,7 +147,7 @@ function tampil(nama_, arg) {
   if (nama_ !== "sambut") segarkanData();
   if (nama_ === "ortu" && !izinOrtu && S.peran !== "ortu") return mintaPin();   // PIN hanya di HP anak; HP orang tua langsung masuk
   izinOrtu = false; layarKini = nama_; argKini = arg; window.scrollTo(0, 0);
-  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, latih: lLatih, materi: lMateri, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
+  ({ sambut: lSambut, beranda: lBeranda, pulau: lPulau, jalur: lJalur, latih: lLatih, materi: lMateri, rencana: lRencana, postes: lPosTes, piala: lPiala, ortu: lOrtu }[nama_])(arg);
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-ke]"); if (b) { bunyi.klik(); tampil(b.dataset.ke, b.dataset.arg); } });
 function tampilPesan(t, ms = 2600) { document.querySelectorAll(".pesan").forEach(x => x.remove()); const d = document.createElement("div"); d.className = "pesan"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
@@ -194,8 +194,9 @@ function lBeranda() {
   const lanjut = mTer ? (() => { const L = Math.min(10, dataMisi(mTer.id).lv + 1); return misiSelesai(mTer.id) ? "" : `<button class="kartu misi" data-ke="jalur" data-arg="${mTer.id}" style="margin:0"><div class="ikon">${mTer.ikon}</div><div class="tengah"><div class="status">LANJUTKAN</div><h3>${mTer.judul}</h3><div class="status">Level ${L} · ${TINGKAT[L][0]}</div></div><div class="kanan" style="font-size:28px">▶️</div></button>`; })() : "";
   layar.innerHTML = `${S.peran === "ortu" ? `<div class="kartu banner-ortu"><div>👀 <b>HP orang tua</b> — hanya untuk memantau. Latihan dikerjakan di HP anak.</div><button class="tbl tbl-biru tbl-kecil" data-ke="ortu">Buka Dasbor Ortu</button></div>` : ""}
     <div class="hitung-mundur">${hm}<div class="piala-mini">${pialaSVG(S.piala.raksasa ? "raksasa" : "kosong", S.piala.raksasa ? "👑" : "")}</div></div>
+    ${kartuRencanaBeranda()}
     ${lanjut}
-    <button class="kartu harian ${sudahHarian ? "sudah" : ""}" id="harian" style="width:100%;text-align:left"><div class="ikon-besar">${sudahHarian ? "✅" : "🎁"}</div><div><h3>${sudahHarian ? "Tantangan Harian selesai!" : "Tantangan Harian"}</h3><div class="ket">${sudahHarian ? "Kembali lagi besok untuk hadiah berikutnya." : "${SOAL_HARIAN} soal campuran · hadiah <b>+50 💰</b> dan api semangat 🔥"}</div></div></button>
+    <button class="kartu harian ${sudahHarian ? "sudah" : ""}" id="harian" style="width:100%;text-align:left"><div class="ikon-besar">${sudahHarian ? "✅" : "🎁"}</div><div><h3>${sudahHarian ? "Tantangan Harian selesai!" : "Tantangan Harian"}</h3><div class="ket">${sudahHarian ? "Kembali lagi besok untuk hadiah berikutnya." : `${SOAL_HARIAN} soal campuran · hadiah <b>+50 💰</b> dan api semangat 🔥`}</div></div></button>
     <h2 class="judul-bagian">🗺️ Pilih Pulau</h2>
     <div class="pulau-grid">${PULAU.map(p => { const ms = misiPulau(p.id), pr = Math.round(ms.filter(m => misiSelesai(m.id)).length / ms.length * 100), bt = ms.reduce((s, m) => s + bintangMisi(m.id), 0);
       return `<button class="pulau ${p.id}" data-ke="pulau" data-arg="${p.id}"><span class="gbr-pulau">${p.ikon}</span><h3>Pulau ${p.judul}</h3><span class="sub">${ms.length} misi · ${pr}% dijelajahi · ⭐ ${bt}/${ms.length * 30}</span><div class="batang"><i style="width:${pr}%"></i></div></button>`; }).join("")}
@@ -213,7 +214,7 @@ function lPulau(pid) {
           const pips = d.bin.map((b, i) => `<i class="${b ? "b" + b : i === d.lv && !done ? "kini" : ""}">${i + 1}</i>`).join("");
           return `<button class="misi ${done ? "selesai" : ""}" data-ke="jalur" data-arg="${m.id}"><div class="ikon">${m.ikon}${done ? '<span class="centang">✓</span>' : ""}</div><div class="tengah"><h3>${m.judul}</h3><div class="pips">${pips}</div>
             <div class="status">${done ? `Selesai! ⭐ ${bintangMisi(m.id)}/30${emas ? " · Piala emas!" : " · kumpulkan 30⭐ untuk piala emas"}` : level1Terkunci(m.id) ? `🎧 Dengar &amp; Baca · ${subTuntas(m.id)}/5 sub level` : `Level ${L} · ${TINGKAT[L][0]}`}</div></div><div class="kanan">${done ? pialaSVG(emas ? "emas" : "perunggu", m.ikon) : '<span style="font-size:26px">▶️</span>'}</div></button>`; }).join("") + kartuTesPulau(p);
-    }).join("");
+    }).join("") + htmlPosTKA(pl.id);   // Pos TKA: 10 paket simulasi (postes.js)
 }
 
 /* ================= Jalur level ================= */
@@ -440,7 +441,9 @@ function lPiala() {
     <div class="lemari">
       <div class="raksasa">${pialaSVG(S.piala.raksasa ? "raksasa" : "kosong", S.piala.raksasa ? "👑" : "")}<h3>Piala Raksasa Juara TKA</h3><div class="ket">${S.piala.raksasa ? "Diraih " + tglIndo(S.piala.raksasa) : `Selesaikan pulau ${PULAU.filter(p => p.tka !== false).map(p => p.judul).join(" & ")}${S.tka ? " sebelum " + tglIndo(S.tka) : " sebelum hari TKA"}`}</div></div>
       <div class="rak"><h3>Piala Pulau</h3><div class="barisan">${PULAU.map(p => `<div class="slot-piala besar">${pialaSVG(S.piala["pulau-" + p.id] ? "emas" : "kosong", S.piala["pulau-" + p.id] ? p.ikon : "")}${p.judul}</div>`).join("")}</div></div>
-      <div class="rak"><h3>📝 Pos Tes</h3><div class="barisan">${POS_TES.map(t => `<div class="slot-piala" title="${judulTes(t)} ${cariPulau(t.pulau).judul}">${pialaSVG(S.piala["tes-" + t.id] ? "perak" : "kosong", S.piala["tes-" + t.id] ? "📝" : "")}${SINGKAT_PULAU[t.pulau] || t.pulau} ${t.no}</div>`).join("")}</div></div>
+      <div class="rak"><h3>🎯 Simulasi TKA</h3><div class="barisan">${Object.keys(KISI_TKA).map(pl => `<div class="slot-piala besar" title="Semua 10 paket tuntas">${pialaSVG(S.piala["tka-" + pl] ? "emas" : "kosong", S.piala["tka-" + pl] ? "🎯" : "")}Juara ${SINGKAT_PULAU[pl]}</div>`).join("")}
+        ${POS_TES.filter(t => t.tka).map(t => `<div class="slot-piala" title="${judulTes(t)} ${cariPulau(t.pulau).judul}">${pialaSVG(S.piala["tes-" + t.id] ? "perak" : "kosong", S.piala["tes-" + t.id] ? "🎯" : "")}${SINGKAT_PULAU[t.pulau]} ${t.paket}</div>`).join("")}</div></div>
+      <div class="rak"><h3>📝 Pos Tes</h3><div class="barisan">${POS_TES.filter(t => !t.tka).map(t => `<div class="slot-piala" title="${judulTes(t)} ${cariPulau(t.pulau).judul}">${pialaSVG(S.piala["tes-" + t.id] ? "perak" : "kosong", S.piala["tes-" + t.id] ? "📝" : "")}${SINGKAT_PULAU[t.pulau] || t.pulau} ${t.no}</div>`).join("")}</div></div>
       ${POS.map(p => `<div class="rak"><h3>${p.ikon} ${pakaiNoPos(p.pulau) ? `Pos ${p.no} · ` : ""}${p.judul}</h3><div class="barisan"><div class="slot-piala">${pialaSVG(S.piala["pos-" + p.id] ? "perak" : "kosong", S.piala["pos-" + p.id] ? p.ikon : "")}Piala Pos</div>
         ${MISI.filter(m => m.pos === p.id).map(m => `<div class="slot-piala" title="${m.judul}">${pialaSVG(S.piala["emas-" + m.id] ? "emas" : S.piala["misi-" + m.id] ? "perunggu" : "kosong", S.piala["misi-" + m.id] ? m.ikon : "")}${m.judul.split(/[ ,&]/)[0]}</div>`).join("")}</div></div>`).join("")}
     </div>
@@ -538,6 +541,10 @@ function ortuAtur(el) {
       <div class="baris-set" id="o-tolu-baris"${atur().ujian ? "" : ' style="opacity:.5"'}><label for="o-tolu"><b>Toleransi kesalahan mode ujian</b><div class="ket">Lewat batas, level belum lulus</div></label><select id="o-tolu" class="isian-teks" style="max-width:160px;min-height:44px">${pilihanTol(atur().tolUjian)}</select></div>
       <div class="baris-set" id="o-ulang-baris"${atur().ujian ? ' style="opacity:.5"' : ""}><span><b>Ulangi nomor yang salah</b><div class="ket">Anak mengerjakan soal serupa di nomor itu sampai benar (hanya mode belajar)</div></span><button class="tbl tbl-kecil ${atur().ulang ? "tbl-hijau" : "tbl-putih"}" id="o-ulang" aria-pressed="${atur().ulang}">${atur().ulang ? "✅ Nyala" : "⏭️ Mati"}</button></div>
       <div class="baris-set"><b>Suara</b><button class="tbl tbl-kecil ${S.suara ? "tbl-hijau" : "tbl-putih"}" id="o-suara">${S.suara ? "🔊 Nyala" : "🔇 Mati"}</button></div>
+      <h3 style="margin-top:18px">📅 Rencana belajar menuju TKA</h3>
+      <div class="baris-set"><label for="o-menit"><b>Waktu belajar per hari</b><div class="ket">Menentukan target level harian</div></label><select id="o-menit" class="isian-teks" style="width:auto;min-height:44px">${MENIT_PILIHAN.map(m => `<option value="${m}" ${m === aturRencana().menit ? "selected" : ""}>${m} menit</option>`).join("")}</select></div>
+      <div class="baris-set"><span><b>Hari belajar</b><div class="ket">Hari lainnya libur</div></span><span class="pilih-hari" id="o-hb">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().hari.includes(i)}">${h}</button>`).join("")}</span></div>
+      <div class="baris-set"><span><b>Hari simulasi TKA</b><div class="ket">Satu paket 75 menit, dijadwalkan menjelang TKA</div></span><span class="pilih-hari" id="o-hs">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().sim.includes(i)}">${h}</button>`).join("")}</span></div>
       <h3 style="margin-top:18px">🌍 Bahasa Inggris · Dengar &amp; Baca</h3>
       ${[["dengar", "Wajib dengar seluruh teks", "Sebelum sub level 1 terbuka"],
         ["baca", `Wajib Baca &amp; Koreksi ≥ ${ING_LULUS_BACA}%`, "Anak membaca keras, dinilai mikrofon. Matikan bila kelas ramai atau mikrofon HP kurang baik"],
@@ -555,6 +562,10 @@ function ortuAtur(el) {
   $("#o-suara").addEventListener("click", e => { S.suara = !S.suara; e.target.textContent = S.suara ? "🔊 Nyala" : "🔇 Mati"; e.target.className = "tbl tbl-kecil " + (S.suara ? "tbl-hijau" : "tbl-putih"); simpanData(); bunyi.klik(); });
   let ulang = atur().ulang, ujian = atur().ujian;
   $("#o-ujian").addEventListener("click", e => { ujian = !ujian; e.target.textContent = ujian ? "📝 Ujian" : "📖 Belajar"; e.target.className = "tbl tbl-kecil " + (ujian ? "tbl-biru" : "tbl-putih"); e.target.setAttribute("aria-pressed", ujian); ["#o-ulang-baris", "#o-tol-baris", "#o-lewat-baris"].forEach(q => $(q).style.opacity = ujian ? ".5" : ""); $("#o-tolu-baris").style.opacity = ujian ? "" : ".5"; bunyi.klik(); simpanAtur(true); });
+  const rc = aturRencana(), hb = new Set(rc.hari), hs = new Set(rc.sim);
+  [["#o-hb", hb], ["#o-hs", hs]].forEach(([q, set]) => $(q).addEventListener("click", e => { const b = e.target.closest("[data-hari]"); if (!b) return; const i = +b.dataset.hari;
+    if (set.has(i)) { if (set === hb && set.size === 1) return tampilPesan("Pilih paling sedikit satu hari belajar."); set.delete(i); } else set.add(i);
+    b.setAttribute("aria-pressed", set.has(i)); bunyi.klik(); simpanAtur(true); }));
   const ing = aturIng();
   el.querySelectorAll("[data-ing]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.ing; ing[k] = !ing[k];
     b.textContent = ing[k] ? "✅ Nyala" : "⏭️ Mati"; b.className = "tbl tbl-kecil " + (ing[k] ? "tbl-hijau" : "tbl-putih"); b.setAttribute("aria-pressed", ing[k]); bunyi.klik(); simpanAtur(true); }));
@@ -565,9 +576,9 @@ function ortuAtur(el) {
     const soal = +$("#o-soal").value, tol = +$("#o-tol").value, tolU = +$("#o-tolu").value;
     if (tol >= soal) return tampilPesan("Toleransi mode belajar harus lebih kecil dari jumlah soal.");
     if (tolU >= soal) return tampilPesan("Toleransi mode ujian harus lebih kecil dari jumlah soal.");
-    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian, lewatBatas: $("#o-lewat").value, ingDengar: ing.dengar, ingBaca: ing.baca, ingUcap: ing.ucap, ingSyarat: ing.syarat }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan(otomatis ? "✅ Tersimpan" : "✅ Pengaturan disimpan", otomatis ? 1400 : 2600); };
+    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian, lewatBatas: $("#o-lewat").value, menitHarian: +$("#o-menit").value, hariBelajar: [...hb].sort(), hariSimulasi: [...hs].sort(),ingDengar: ing.dengar, ingBaca: ing.baca, ingUcap: ing.ucap, ingSyarat: ing.syarat }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan(otomatis ? "✅ Tersimpan" : "✅ Pengaturan disimpan", otomatis ? 1400 : 2600); };
   $("#o-simpan").addEventListener("click", () => simpanAtur(false));
-  ["#o-nama", "#o-av", "#o-tka", "#o-soal", "#o-tol", "#o-tolu", "#o-lewat"].forEach(q => $(q).addEventListener("change", () => simpanAtur(true)));
+  ["#o-nama", "#o-av", "#o-tka", "#o-soal", "#o-tol", "#o-tolu", "#o-lewat", "#o-menit"].forEach(q => $(q).addEventListener("change", () => simpanAtur(true)));
   $("#o-unduh").addEventListener("click", async () => { const nm = `petualangan-tka-${S.profil.nama.replace(/\W+/g, "-").toLowerCase()}-${hariIni()}.json`; try { await simpanBerkas(JSON.stringify(S), nm, "application/json"); tampilPesan(pesanSimpan("diunduh", nm), 4000); } catch (e) { tampilPesan("Unduhan gagal. Jika memakai VPN atau ekstensi peramban, matikan dulu lalu coba lagi.", 5000); } });
   $("#o-pulih").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const x = JSON.parse(r.result); if (x.v !== 1 || !x.profil) throw 0;
       dialog(`<div style="font-size:48px">⬆️</div><h2>Pulihkan cadangan?</h2><p class="ket">Kemajuan <b>${esc(x.profil.nama)}</b> akan menggantikan kemajuan di perangkat ini.</p>`, [["Ya, pulihkan", "tbl-utama", () => { S = Object.assign(bawaan(), x); simpanData(); tampilPesan("✅ Cadangan dipulihkan"); tampil("beranda"); }], ["Batal", "tbl-putih", null]]);
@@ -595,7 +606,7 @@ function hasilCoba() {
 function perbaruiTampilan() {
   if (!segarkanData() || document.querySelector(".lapis")) return;
   if (layarKini === "ortu") { if (tabOrtu === "dasbor") { pasangKepala(); isiOrtu(); } else pasangKepala(); return; }
-  if (["beranda", "piala", "pulau", "jalur"].includes(layarKini)) { const y = window.scrollY; tampil(layarKini, argKini); window.scrollTo(0, y); }
+  if (["beranda", "piala", "pulau", "jalur", "rencana"].includes(layarKini)) { const y = window.scrollY; tampil(layarKini, argKini); window.scrollTo(0, y); }
 }
 window.addEventListener("storage", e => { if (e.key === KUNCI_SIMPAN) perbaruiTampilan(); });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { perbaruiTampilan(); sinkronkan(); } });

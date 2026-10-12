@@ -8,7 +8,7 @@
 
 // Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
 const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
-const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
+const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn", "rencanaHari"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
 let sedangSinkron = false, jedaSinkron = null;
 
 async function rpcPts(fn, arg) {

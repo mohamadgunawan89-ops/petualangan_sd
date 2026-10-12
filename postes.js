@@ -17,14 +17,34 @@ const BOBOT_TES = { bil: 12, alj: 5, ukr: 8, dat: 5, tem: 9, pah: 11, nal: 10,
 const LEVEL_TES = [[7, 8], [8, 16], [9, 6]];
 const POS_TES = PULAU.flatMap(pl => { const ps = POS.filter(p => p.pulau === pl.id);
   return ps.map((p, i) => ({ id: `${pl.id}-${p.no}`, pulau: pl.id, no: p.no, pos: ps.slice(0, i + 1).map(x => x.id) })); });
+/* Pos TKA (12 Okt 2026): pos terakhir Pulau Matematika & Bahasa Indonesia (mapel TKA SD/MI), 10 paket simulasi.
+   Mengacu kerangka asesmen TKA SD/MI (Perkaban BSKAP No. 047/H/AN/2025): 30 soal, 75 menit per mapel; bentuk pilihan
+   ganda, PG kompleks, dan PG kompleks kategori (benar–salah); tanpa isian. Matematika: Bilangan (termasuk pola &
+   perbandingan), Geometri & Pengukuran, Data & Peluang. Bahasa Indonesia: membaca teks informasi & fiksi — menemukan
+   informasi tersurat, memahami (inferensial), menalar/mengevaluasi. Soal tiap paket TETAP (benih acak dari id paket)
+   sehingga nilai paket yang sama bisa dibandingkan. Selalu terbuka (latihan menuju hari H). */
+const PAKET_TKA = 10;
+const LEVEL_TKA = [[6, 6], [7, 8], [8, 12], [9, 4]];          // 6 mudah, 8 sedang, 12 setara TKA, 4 sulit (HOTS)
+const BENTUK_TKA = { pg: 20, pgk: 5, bs: 5 };                 // sasaran bentuk soal per paket
+const KISI_TKA = {
+  mtk: [["Bilangan", "operasi hitung, pecahan–desimal–persen, KPK & FPB, pola, perbandingan, uang", ["bil", "alj"]],
+    ["Geometri & Pengukuran", "satuan, keliling & luas, bangun gabungan, volume, sudut, sifat bangun, koordinat", ["ukr"]],
+    ["Data & Peluang", "tabel & diagram, rata-rata–modus–median, peluang sederhana", ["dat"]]],
+  bin: [["Menemukan informasi", "informasi tersurat dari teks informasi & fiksi", ["tem"]],
+    ["Memahami isi", "makna kata, ide pokok, tokoh & latar, inferensial", ["pah"]],
+    ["Menalar & mengevaluasi", "simpulan, amanat, fakta & opini, tujuan penulis", ["nal"]]],
+};
+POS_TES.push(...Object.keys(KISI_TKA).flatMap(pl => Array.from({ length: PAKET_TKA }, (_, k) =>
+  ({ id: `${pl}-tka-${k + 1}`, pulau: pl, no: k + 1, paket: k + 1, tka: true, pos: POS.filter(p => p.pulau === pl).map(p => p.id) }))));
 const cariTes = id => POS_TES.find(t => t.id === id);
-const tesUntukPos = p => POS_TES.find(t => t.pulau === p.pulau && t.no === p.no);
-const judulTes = t => `Pos Tes ${t.no}`;
+const tesUntukPos = p => POS_TES.find(t => !t.tka && t.pulau === p.pulau && t.no === p.no);
+const judulTes = t => (t.tka ? `Simulasi TKA ${t.paket}` : `Pos Tes ${t.no}`);
 const namaPosTes = pid => { const p = POS.find(x => x.id === pid); return p.pulau !== "bin" ? `Pos ${p.no} · ${p.judul}` : p.judul; };
-const cakupanTes = t => (t.pos.length === 1 ? namaPosTes(t.pos[0]) : t.pulau !== "bin" ? `Pos 1–${t.no}` : t.pos.map(id => POS.find(p => p.id === id).judul.replace("Jurus ", "")).join(", "));
+const cakupanTes = t => (t.tka ? `Paket ${t.paket} · kisi-kisi TKA` : t.pos.length === 1 ? namaPosTes(t.pos[0]) : t.pulau !== "bin" ? `Pos 1–${t.no}` : t.pos.map(id => POS.find(p => p.id === id).judul.replace("Jurus ", "")).join(", "));
 const riwayatTes = id => (S.posTes && S.posTes[id]) || [];
 const terbaikTes = id => riwayatTes(id).reduce((a, x) => Math.max(a, x.nilai), -1);
-const tesTerbuka = t => t.pos.every(posSelesai);
+const tesTerbuka = t => t.tka || t.pos.every(posSelesai);
+const paketTKA = pulau => POS_TES.filter(t => t.tka && t.pulau === pulau);
 const predikatTes = n => (n >= 85 ? "Istimewa 🌟" : n >= TES_TUNTAS ? "Baik 👍" : n >= 55 ? "Cukup 🙂" : "Perlu belajar lagi 💪");
 const jamTes = dtk => { dtk = Math.max(0, Math.ceil(dtk)); return `${String(Math.floor(dtk / 60)).padStart(2, "0")}:${String(dtk % 60).padStart(2, "0")}`; };
 
@@ -36,7 +56,36 @@ function bagiSoalTes(t) {
   jatah.slice().sort((a, b) => b.sisa - a.sisa).forEach(x => { if (kurang > 0) { x.n++; kurang--; } });
   return jatah;
 }
+/* Benih acak tetap (mulberry32): Math.random diganti sementara selama paket TKA disusun */
+function denganBenih(benih, f) {
+  const asli = Math.random; let a = benih >>> 0;
+  Math.random = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  try { return f(); } finally { Math.random = asli; }
+}
+const benihTeks = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+function susunPaketTKA(t) {
+  return denganBenih(benihTeks("paket-tka|" + t.id), () => {
+    const level = kocok(LEVEL_TKA.flatMap(([L, n]) => Array(n).fill(L))), butuh = { ...BENTUK_TKA }, ada = new Set(), hasil = [];
+    let k = 0;
+    for (const { id: pid, n } of bagiSoalTes(t)) {
+      const ms = kocok(MISI.filter(m => m.pos === pid)), bag = [];
+      for (let i = 0; i < n; i++) {
+        const m = ms[i % ms.length], L = level[k++]; let dipilih = null, cadangan = null;
+        for (let c = 0; c < 40 && !dipilih; c++) {
+          const s = buatSoal(m.id, L, null);
+          if (s.bentuk === "isian" || ada.has(s.kunciUnik)) continue;   // TKA tanpa isian
+          if (butuh[s.bentuk] > 0) dipilih = s; else cadangan ||= s;
+        }
+        const s = dipilih || cadangan || buatSoal(m.id, L, null);
+        butuh[s.bentuk] = (butuh[s.bentuk] || 0) - 1; ada.add(s.kunciUnik); s.pos = pid; bag.push(s);
+      }
+      bag.sort((a, b) => a.level - b.level); hasil.push(...bag);
+    }
+    return hasil;
+  });
+}
 function susunSoalTes(t, coba) {
+  if (t.tka) return susunPaketTKA(t);
   const level = kocok(LEVEL_TES.flatMap(([L, n]) => Array(n).fill(L))), ada = new Set(), hasil = [];
   let k = 0;
   for (const { id: pid, n } of bagiSoalTes(t)) {
@@ -184,6 +233,8 @@ function kumpulkanTes(waktuHabis) {
     koin = b * 5;
     if (nilai >= TES_TUNTAS && !S.piala["tes-" + x.tid]) { S.piala["tes-" + x.tid] = hariIni(); koin += 100;
       antrean.push(["perak", "📝", `Piala ${judulTes(t)}!`, `Nilaimu <b>${nilai}</b> di ${judulTes(t)} ${cariPulau(t.pulau).judul}. Kamu siap menghadapi soal TKA!`]); }
+    if (t.tka && !S.piala["tka-" + t.pulau] && paketTKA(t.pulau).every(p => terbaikTes(p.id) >= TES_TUNTAS)) { S.piala["tka-" + t.pulau] = hariIni(); koin += 300;
+      antrean.push(["emas", "🎯", `Juara Simulasi TKA ${cariPulau(t.pulau).judul}!`, `Kesepuluh paket simulasi TKA ${cariPulau(t.pulau).judul} tuntas dengan nilai ${TES_TUNTAS} ke atas. Kamu benar-benar siap menghadapi TKA!`]); }
     rek.rekor = terbaikLama >= 0 && nilai > terbaikLama;
     S.koin += koin; catatApi(); simpanData(); hapusTesJalan();
   }
@@ -263,10 +314,10 @@ function lPosTes(tid) {
   const tombol = jalan && jalan.tid === tid ? `<button class="tbl tbl-utama tbl-lebar" id="t-mulai">Lanjutkan tes ▶ (sisa ${jamTes(sisaDetikTes(jalan))})</button>`
     : lain ? `<button class="tbl tbl-utama tbl-lebar" disabled>Selesaikan dulu ${judulTes(lain)} ${cariPulau(lain.pulau).judul}</button>`
       : `<button class="tbl tbl-utama tbl-lebar" id="t-mulai" ${buka ? "" : "disabled"}>${buka ? `Mulai ${judulTes(t)} 🚀` : "🔒 Belum terbuka"}</button>`;
-  layar.innerHTML = `<div class="jalur-kepala"><div class="ikon-misi">📝</div><h1>${judulTes(t)}</h1><p class="ket">${cariPulau(t.pulau).ikon} ${cariPulau(t.pulau).judul} · ${cakupanTes(t)}${terbaik >= 0 ? ` · nilai terbaik <b>${terbaik}</b>` : ""}</p></div>
-    <div class="kartu"><h3>Materi yang diuji</h3><ul class="daftar-tes">${materi}</ul>${buka ? "" : '<p class="ket" style="margin:8px 0 0">🔒 Pos Tes terbuka setelah <b>semua misi</b> di pos yang diuji selesai (sampai Level 10).</p>'}</div>
+  layar.innerHTML = `<div class="jalur-kepala"><div class="ikon-misi">${t.tka ? "🎯" : "📝"}</div><h1>${judulTes(t)}</h1><p class="ket">${cariPulau(t.pulau).ikon} ${cariPulau(t.pulau).judul} · ${cakupanTes(t)}${terbaik >= 0 ? ` · nilai terbaik <b>${terbaik}</b>` : ""}</p></div>
+    ${t.tka ? htmlKisiTKA(t) : `<div class="kartu"><h3>Materi yang diuji</h3><ul class="daftar-tes">${materi}</ul>${buka ? "" : '<p class="ket" style="margin:8px 0 0">🔒 Pos Tes terbuka setelah <b>semua misi</b> di pos yang diuji selesai (sampai Level 10).</p>'}</div>`}
     <div class="kartu"><h3>Aturan seperti TKA</h3><ul class="ket aturan-tes">
-      <li>📄 <b>${TES_SOAL} soal</b> setara TKA SD (sulit, setara TKA, dan di atas TKA).</li>
+      <li>📄 <b>${TES_SOAL} soal</b> ${t.tka ? "mengikuti kisi-kisi TKA SD/MI: pilihan ganda, PG kompleks, dan benar–salah (tanpa isian). Soal paket ini selalu sama, jadi nilaimu bisa dibandingkan saat mengulang." : "setara TKA SD (sulit, setara TKA, dan di atas TKA)."}</li>
       <li>⏱️ Waktu <b>${TES_MENIT} menit</b>. Waktu tetap berjalan walau aplikasi ditutup; bila habis, jawaban dikumpulkan otomatis.</li>
       <li>🔀 Boleh pindah nomor dan menandai <b>ragu-ragu</b>. Tidak ada petunjuk Kiko.</li>
       <li>✔️ Jawaban baru diperiksa setelah dikumpulkan. PG kompleks dan benar–salah dihitung benar bila semua pilihannya tepat.</li>
@@ -274,6 +325,26 @@ function lPosTes(tid) {
     ${riwayat ? `<div class="kartu"><h3>Nilai sebelumnya</h3><ul class="riwayat-tes">${riwayat}</ul></div>` : ""}
     ${tombol}<p class="ket" style="text-align:center">Siapkan kertas coretan dan cari tempat yang tenang 🦉</p>`;
   layar.querySelector("#t-mulai")?.addEventListener("click", () => { bunyi.klik(); mulaiTes(tid); });
+}
+/* Kisi-kisi paket Simulasi TKA: banyak soal per elemen, bentuk soal, dan sebaran tingkat */
+function htmlKisiTKA(t) {
+  const jatah = bagiSoalTes(t), n = ids => jatah.filter(x => ids.includes(x.id)).reduce((a, x) => a + x.n, 0);
+  return `<div class="kartu"><h3>Kisi-kisi paket ini</h3><div style="overflow-x:auto"><table class="tabel-laporan"><thead><tr><th>Elemen</th><th>Soal</th></tr></thead><tbody>
+      ${KISI_TKA[t.pulau].map(([el, isi, ids]) => `<tr><td><b>${el}</b><small class="ket" style="display:block">${isi}</small></td><td class="angka">${n(ids)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="ket" style="margin:10px 0 0">Bentuk soal ±${BENTUK_TKA.pg} pilihan ganda, ±${BENTUK_TKA.pgk} PG kompleks, ±${BENTUK_TKA.bs} benar–salah. Tingkat: ${LEVEL_TKA.map(([L, k]) => `${k} ${["", "", "", "", "", "", "mudah", "sedang", "setara TKA", "sulit (HOTS)"][L]}`).join(", ")}.
+      ${t.pulau === "bin" ? "Bacaan berupa teks informasi dan teks fiksi yang dekat dengan kehidupan sehari-hari." : "Soal memakai konteks sehari-hari maupun matematika murni."}</p>
+    <p class="ket" style="margin:6px 0 0">Acuan: kerangka asesmen TKA SD/MI (Perkaban BSKAP No. 047/H/AN/2025) — ${TES_SOAL} soal, ${TES_MENIT} menit per mata pelajaran.</p></div>`;
+}
+/* Pos TKA di akhir halaman pulau: 10 paket */
+function htmlPosTKA(pulau) {
+  const ts = paketTKA(pulau); if (!ts.length) return "";
+  const no = POS.filter(p => p.pulau === pulau).length + 1, tuntas = ts.filter(t => terbaikTes(t.id) >= TES_TUNTAS).length, jalan = bacaTesJalan(), piala = S.piala["tka-" + pulau];
+  return `<div class="pos-kepala pos-tka"><div class="bulat">🎯</div><div><h2>${pakaiNoPos(pulau) ? `Pos ${no} · ` : ""}Pos TKA</h2><div class="ket">10 paket simulasi · ${TES_SOAL} soal · ${TES_MENIT} menit · ${tuntas}/10 tuntas</div></div>
+      <div class="piala-pos" title="Piala Juara Simulasi TKA">${pialaSVG(piala ? "emas" : "kosong", piala ? "🎯" : "")}</div></div>
+    <p class="ket" style="margin:4px 4px 8px">Latihan seperti TKA sungguhan, mengikuti kisi-kisi resmi. Boleh dikerjakan kapan saja; makin dekat hari TKA, makin sering berlatih. Nilai ${TES_TUNTAS}+ = tuntas.</p>
+    <div class="paket-tka">${ts.map(t => { const tb = terbaikTes(t.id), sedang = jalan && jalan.tid === t.id, kali = riwayatTes(t.id).length;
+      return `<button class="paket ${tb >= TES_TUNTAS ? "tuntas" : tb >= 0 ? "pernah" : ""} ${sedang ? "sedang" : ""}" data-ke="postes" data-arg="${t.id}" aria-label="Simulasi TKA paket ${t.paket}">
+        <span class="paket-no">${t.paket}</span><span class="paket-nilai">${sedang ? "⏱️" : tb >= 0 ? tb : "–"}</span><span class="paket-ket">${sedang ? "berjalan" : kali ? `${kali}×` : "baru"}</span></button>`; }).join("")}</div>`;
 }
 /* Dipanggil saat aplikasi dibuka: tawarkan melanjutkan tes yang belum dikumpulkan */
 function cekTesTertunda() {
@@ -286,12 +357,18 @@ function cekTesTertunda() {
 
 /* ---------- Untuk orang tua ---------- */
 function htmlPosTesOrtu() {
-  const baris = PULAU.map(p => `<tr class="kelompok"><td colspan="4">${p.ikon} ${p.judul}</td></tr>` + POS_TES.filter(t => t.pulau === p.id).map(t => { const rw = riwayatTes(t.id), akhir = rw[rw.length - 1], tb = terbaikTes(t.id);
+  const tka = Object.keys(KISI_TKA).map(pl => `<tr><td>${cariPulau(pl).ikon} ${cariPulau(pl).judul}</td>${paketTKA(pl).map(t => { const tb = terbaikTes(t.id);
+    return `<td class="angka ${tb >= TES_TUNTAS ? "sel-tuntas" : ""}">${tb >= 0 ? tb : "–"}</td>`; }).join("")}</tr>`).join("");
+  const baris = PULAU.map(p => `<tr class="kelompok"><td colspan="4">${p.ikon} ${p.judul}</td></tr>` + POS_TES.filter(t => !t.tka && t.pulau === p.id).map(t => { const rw = riwayatTes(t.id), akhir = rw[rw.length - 1], tb = terbaikTes(t.id);
     return `<tr><td>📝 ${judulTes(t)}<small class="ket" style="display:block">${cakupanTes(t)}</small></td><td class="angka">${rw.length || "–"}</td><td class="angka">${tb >= 0 ? tb + (S.piala["tes-" + t.id] ? " 🏆" : "") : "–"}</td>
       <td class="angka posisi">${akhir ? `${akhir.nilai}<small>${tglIndo(hariIni(new Date(akhir.t)))} · ${lamaTeks(akhir.dt)}</small>` : tesTerbuka(t) ? "<small>siap</small>" : "<small>🔒</small>"}</td></tr>`; }).join("")).join("");
   return `<div class="kartu"><h3>Pos Tes</h3><p class="ket" style="margin:4px 0 8px">Tes ${TES_SOAL} soal · ${TES_MENIT} menit setara TKA SD setelah tiap pos/jurus selesai; menguji semua pos sebelumnya. Nilai 0–100, tuntas ${TES_TUNTAS}.</p>
-    <div style="overflow-x:auto"><table class="tabel-laporan"><thead><tr><th>Tes</th><th>Kali</th><th>Terbaik</th><th>Terakhir</th></tr></thead><tbody>${baris}</tbody></table></div></div>`;
+    <div style="overflow-x:auto"><table class="tabel-laporan"><thead><tr><th>Tes</th><th>Kali</th><th>Terbaik</th><th>Terakhir</th></tr></thead><tbody>${baris}</tbody></table></div></div>
+    <div class="kartu"><h3>🎯 Simulasi TKA</h3><p class="ket" style="margin:4px 0 8px">Nilai terbaik tiap paket (1–10), ${TES_SOAL} soal · ${TES_MENIT} menit sesuai kisi-kisi TKA SD/MI. Hijau = tuntas (${TES_TUNTAS}+).</p>
+      <div style="overflow-x:auto"><table class="tabel-laporan tabel-tka"><thead><tr><th>Mapel</th>${Array.from({ length: PAKET_TKA }, (_, i) => `<th>${i + 1}</th>`).join("")}</tr></thead><tbody>${tka}</tbody></table></div></div>`;
 }
 const htmlPosTesMateri = pulau => `<div class="pos-sub">📝 Pos Tes · ${TES_SOAL} soal · ${TES_MENIT} menit</div><div class="tk-isi">` +
-  POS_TES.filter(t => t.pulau === pulau).map(t => `<div class="lv-baris"><span class="lencana k5">${judulTes(t)}</span><span class="kt"><b>${cakupanTes(t)}</b><small>Level 7–9 · ${bagiSoalTes(t).map(x => `${POS.find(p => p.id === x.id).judul.replace("Jurus ", "")} ${x.n}`).join(" · ")}</small></span>
-    <span class="lv-bintang">${terbaikTes(t.id) >= 0 ? "terbaik " + terbaikTes(t.id) : tesTerbuka(t) ? "siap" : "terkunci"}</span><span class="lv-tombol"><button type="button" class="tbl tbl-biru tbl-kecil" data-coba-tes="${t.id}">Coba</button></span></div>`).join("") + `</div>`;
+  POS_TES.filter(t => !t.tka && t.pulau === pulau).map(t => `<div class="lv-baris"><span class="lencana k5">${judulTes(t)}</span><span class="kt"><b>${cakupanTes(t)}</b><small>Level 7–9 · ${bagiSoalTes(t).map(x => `${POS.find(p => p.id === x.id).judul.replace("Jurus ", "")} ${x.n}`).join(" · ")}</small></span>
+    <span class="lv-bintang">${terbaikTes(t.id) >= 0 ? "terbaik " + terbaikTes(t.id) : tesTerbuka(t) ? "siap" : "terkunci"}</span><span class="lv-tombol"><button type="button" class="tbl tbl-biru tbl-kecil" data-coba-tes="${t.id}">Coba</button></span></div>`).join("") +
+  (KISI_TKA[pulau] ? `<div class="lv-baris"><span class="lencana k6">Pos TKA</span><span class="kt"><b>Simulasi TKA paket 1–10</b><small>Kisi-kisi TKA SD/MI · ${KISI_TKA[pulau].map(x => x[0]).join(" · ")}</small></span>
+    <span class="lv-tombol paket-coba">${paketTKA(pulau).map(t => `<button type="button" class="tbl tbl-putih tbl-kecil" data-coba-tes="${t.id}" aria-label="Coba paket ${t.paket}">${t.paket}</button>`).join("")}</span></div>` : "") + `</div>`;
