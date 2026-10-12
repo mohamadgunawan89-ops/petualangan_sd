@@ -81,6 +81,11 @@ const KS = {
     return pgL("Dengarkan, lalu pilih kata yang diucapkan.", w.k, pengecohKata(lv, w, "k", L), L, { suara: w.k, bahas: `Yang diucapkan: <b>${w.k}</b> (${w.a}).` }); },
   dengarArti: (lv, L) => { if (!adaSuaraInggris()) return KS.kataArti(lv, L); const w = pilih(kataLevel(lv));
     return pgL("Dengarkan. Apa artinya?", w.a, pengecohKata(lv, w, "a", L), L, { suara: w.k, bahas: `Yang diucapkan: <b>${w.k}</b>, artinya <b>${w.a}</b>.` }); },
+  /* Soal bergambar (12 Okt 2026): level dengan peta ikon dari English Reading (perasaan, pakaian, cuaca, kendaraan, hobi, hewan, profesi, ungkapan kelas) */
+  gambarKata: (lv, L) => { const ik = lv.ikon || {}, n = {}; Object.values(ik).forEach(e => (n[e] = (n[e] || 0) + 1));
+    const W = kataLevel(lv).filter(w => ik[w.k] && n[ik[w.k]] === 1);   // hanya ikon yang unik (ungkapan kelas memakai ikon guru/siswa yang sama)
+    if (W.length < 3) return KS.kataArti(lv, L); const w = pilih(W);
+    return pgL("Gambar ini dalam bahasa Inggris adalah …", w.k, pengecohKata(lv, w, "k", L), L, { gambar: `<div class="em-besar" role="img" aria-label="gambar">${lv.ikon[w.k]}</div>`, bahas: bahasKata(w) }); },
   rumpang: (lv, L) => { for (let i = 0; i < 12; i++) { const w = pilih(kataLevel(lv)), [en, id] = kalimatKata(lv, w, L), rx = rxKata(w.k);
       if (!rx.test(en)) continue;
       return pgL(`Lengkapi kalimat:<br>${miring(en.replace(rx, "______"))}${L <= 5 ? `<br><span class="ket">(${id})</span>` : ""}`, w.k, pengecohKata(lv, w, "k", L), L,
@@ -117,7 +122,7 @@ const LEVEL_KOSAKATA = { 1: [KS.kataArti], 2: [KS.kataArti, KS.artiKata], 3: [KS
   4: [KS.dengarKata, KS.dengarArti, KS.rumpang], 5: [KS.rumpang, KS.artiKalimat, KS.situasi] };
 function tingkatKosakata(id) {
   const lv = enLevel(id), t = {};
-  for (let L = 1; L <= 10; L++) t[L] = L <= 5 ? LEVEL_KOSAKATA[L].map(f => () => f(lv, L)) : [() => soalKosakataTKA(lv, L)];
+  for (let L = 1; L <= 10; L++) t[L] = L <= 5 ? [...LEVEL_KOSAKATA[L], ...(lv.ikon && L <= 3 ? [KS.gambarKata] : [])].map(f => () => f(lv, L)) : [() => soalKosakataTKA(lv, L)];
   return t;
 }
 Object.entries(POS_KOSAKATA).forEach(([pos, ids]) => ids.forEach(id => { const lv = enLevel(id);

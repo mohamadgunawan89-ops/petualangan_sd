@@ -176,6 +176,7 @@ function lLatih(id) {
   const mik = bisaMikEN(), tts = bisaDengarEN();   // Baca & Koreksi tetap bisa dipakai walau tidak diwajibkan
   layar.innerHTML = `<div class="jalur-kepala"><div class="ikon-misi">${m.ikon}</div><h1>${m.judul}</h1><p class="ket">🎧 Dengar &amp; Baca · ${subTuntas(id)}/5 sub level tuntas</p></div>
     ${S.peran === "ortu" ? '<div class="kartu banner-ortu"><div>👀 <b>HP orang tua</b> — boleh mencoba, tetapi hasilnya tidak disimpan.</div></div>' : ""}
+    ${ILUS_EN.ada(lv) ? ILUS_EN.html(lv) : ""}
     ${lv.pola ? `<div class="kartu lt-pola"><div class="lt-pola-label">Pola</div><div class="lt-pola-rumus" lang="en">${lv.pola}</div>${lv.catatan ? `<p class="ket">${lv.catatan}</p>` : ""}</div>` : ""}
     <div class="kartu lt-panel">
       <div class="lt-tombol">${tts ? '<button class="tbl tbl-utama" id="lt-dengar">▶ Dengarkan</button>' : ""}${mik ? '<button class="tbl tbl-biru" id="lt-baca">🎤 Baca &amp; Koreksi</button>' : ""}</div>
@@ -197,6 +198,7 @@ function lLatih(id) {
     layar.querySelectorAll(".lt-kata.aktif").forEach(x => x.classList.remove("aktif")); k.classList.add("aktif");
     const b = $("#lt-dengar"); if (b) b.textContent = `▶ Dengarkan dari kalimat ${w.kal + 1}`; });
   pasangTangga(id);
+  if (ILUS_EN.ada(lv)) ILUS_EN.pasang(lv, layar);   // gambar bantu interaktif (ilustrasi-inggris.js)
 }
 function htmlTangga(id) {
   const x = ingLihat(id), nama = NAMA_SUB[jenisIng(lvIng(id))], a = aturIng();
@@ -322,7 +324,7 @@ function kalimatPendek(daftar, a = 3, b = 10) { const ok = daftar.filter(x => pa
 const bahasTarget = (en, id) => `${miring(en)}${id ? ` — ${id}` : ""}`;
 const SUB_ING = {
   kata: [
-    lv => pilih([KS.kataArti, KS.artiKata])(lv, 3),
+    lv => pilih(lv.ikon ? [KS.kataArti, KS.artiKata, KS.gambarKata, KS.gambarKata] : [KS.kataArti, KS.artiKata])(lv, 3),
     lv => pilih([KS.dengarKata, KS.dengarArti, KS.dengarKalimat])(lv, 4),
     lv => ((lv.situasi || []).length ? pilih([KS.situasi, KS.situasi, KS.artiKalimat]) : pilih([KS.artiKalimat, KS.rumpang]))(lv, 5),
     lv => { if (ya()) return KS.rumpang(lv, 5);

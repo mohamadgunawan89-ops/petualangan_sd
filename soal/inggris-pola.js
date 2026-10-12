@@ -1,4 +1,4 @@
-/* DISALIN dari English Reading/pola.js (2026-10-11) — perakit kalimat pola (window.POLA_GEN).
+/* DISALIN dari English Reading/pola.js (2026-10-12) — perakit kalimat pola (window.POLA_GEN).
    Jangan diubah di sini: ubah di English Reading lalu salin ulang. */
 /* Perakit kalimat untuk Latihan bertahap level Pola kalimat.
    Tiap pola = fungsi yang merakit satu kalimat acak dari daftar subjek, kata kerja,

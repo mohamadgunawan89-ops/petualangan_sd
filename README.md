@@ -46,6 +46,12 @@ Meniru English Reading, sebagai **tambahan** di depan 10 level setiap misi Bahas
    Ucapkan kalimat. Nilai = benar pada percobaan pertama; yang salah diulang dengan soal lain tanpa menambah nilai.
    Sub level berikutnya terbuka bila **≥ 80%**. Ucapan kata lulus ≥ 70; kalimat lulus bila kata terlewat ≤ 20%.
 
+**Ilustrasi** (12 Okt 2026, `ilustrasi-inggris.js`, disalin dari English Reading): 18 level kosakata punya gambar bantu
+interaktif di layar Dengar & Baca — jam (jarum bergerak, past/to), pekan, kalender, toko sekolah (struk & kembalian),
+anggota tubuh, pohon keluarga, denah rumah, preposisi (bola & kotak), palet warna, peta (rute), dan kisi ikon. Ketuk
+bagian gambar → kalimatnya tampil dan dibacakan. Level berikon juga mendapat soal bergambar ("Gambar ini dalam bahasa
+Inggris adalah …") di level 1–3 dan sub level Kenali. Data `ilustrasi`/`ikon`/`catatanIlus` ikut disalin `salin-inggris.js`.
+
 Pengaturan orang tua (`S.atur.ingDengar/ingBaca/ingUcap/ingSyarat`, bawaan nyala): wajib dengar, wajib Baca & Koreksi,
 sub level Ucapkan pakai mikrofon (mati = mengetik/menyusun), dan Level 1 baru terbuka setelah 5 sub level tuntas (hanya
 misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati otomatis. Kemajuan di `S.ing[idMisi]`

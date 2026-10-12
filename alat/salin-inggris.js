@@ -11,7 +11,7 @@ require(ER + 'bacaan.js'); require(ER + 'soal.js');
 const W = global.window;
 const LEVEL = W.BACAAN.filter((b) => b.tahap <= 2).map((b) => {
   const o = { id: b.id, tahap: b.tahap, judul: b.judul };
-  for (const k of ['kelompok', 'kosakata', 'contohLain', 'situasi', 'mirip', 'pola', 'catatan', 'teks', 'arti']) if (b[k] !== undefined) o[k] = b[k];
+  for (const k of ['kelompok', 'kosakata', 'contohLain', 'situasi', 'mirip', 'ilustrasi', 'ikon', 'catatanIlus', 'pola', 'catatan', 'teks', 'arti']) if (b[k] !== undefined) o[k] = b[k];
   return o;
 });
 const BACAAN_ID = LEVEL.filter((b) => b.teks && !b.pola).map((b) => b.id);
