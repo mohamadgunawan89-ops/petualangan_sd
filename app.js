@@ -552,10 +552,11 @@ function ortuAtur(el) {
       <div class="baris-set"><span><b>Hari latihan Bahasa Inggris</b><div class="ket">Hanya di hari belajar; bawaan sama dengan hari belajar</div></span><span class="pilih-hari" id="o-ih">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().ingHari.includes(i)}">${h}</button>`).join("")}</span></div>
       <h3 style="margin-top:18px">🌍 Bahasa Inggris · Dengar &amp; Baca</h3>
       ${[["dengar", "Wajib dengar seluruh teks", "Sebelum sub level 1 terbuka"],
-        ["baca", `Wajib Baca &amp; Koreksi ≥ ${ING_LULUS_BACA}%`, "Anak membaca keras, dinilai mikrofon. Matikan bila kelas ramai atau mikrofon HP kurang baik"],
+        ["baca", "Wajib Baca &amp; Koreksi", "Anak membaca keras, dinilai mikrofon. Matikan bila kelas ramai atau mikrofon HP kurang baik"],
         ["ucap", "Sub level Ucapkan memakai mikrofon", "Mati: diganti mengetik atau menyusun kata"],
         ["syarat", "Level 1 terbuka setelah Dengar &amp; Baca tuntas", "Hanya untuk misi yang belum dimulai"]].map(([k, j, ket]) =>
-        `<div class="baris-set"><span><b>${j}</b><div class="ket">${ket}</div></span><button class="tbl tbl-kecil ${aturIng()[k] ? "tbl-hijau" : "tbl-putih"}" data-ing="${k}" aria-pressed="${aturIng()[k]}">${aturIng()[k] ? "✅ Nyala" : "⏭️ Mati"}</button></div>`).join("")}
+        `<div class="baris-set"><span><b>${j}</b><div class="ket">${ket}</div></span><button class="tbl tbl-kecil ${aturIng()[k] ? "tbl-hijau" : "tbl-putih"}" data-ing="${k}" aria-pressed="${aturIng()[k]}">${aturIng()[k] ? "✅ Nyala" : "⏭️ Mati"}</button></div>`
+        + (k === "baca" ? `<div class="baris-set" id="o-bacamin-baris"${aturIng().baca ? "" : ' style="opacity:.5"'}><label for="o-bacamin"><b>Akurasi minimal Baca &amp; Koreksi</b><div class="ket">Teks dibaca sampai habis dengan akurasi sebesar ini agar sub level 1 terbuka</div></label><select id="o-bacamin" class="isian-teks" style="width:auto;min-height:44px">${PILIHAN_BACA.map(v => `<option value="${v}" ${v === bacaMin() ? "selected" : ""}>${v}%${v === ING_LULUS_BACA ? " (bawaan)" : ""}</option>`).join("")}</select></div>` : "")).join("")}
       ${bisaMikEN() ? "" : '<p class="ket">ℹ️ Peramban ini tidak punya pengenal suara: langkah mikrofon dilewati otomatis. Pakai Chrome di Android untuk fitur bicara.</p>'}
       <p class="ket" style="margin:10px 0 0">💾 Setiap perubahan langsung tersimpan.</p><button class="tbl tbl-biru tbl-lebar" id="o-simpan" style="margin-top:8px">Simpan pengaturan</button></div>
     <div class="kartu" id="kartu-sinkron">${isiKartuSinkron()}</div>
@@ -574,7 +575,7 @@ function ortuAtur(el) {
     b.setAttribute("aria-pressed", set.has(i)); bunyi.klik(); simpanAtur(true); }));
   const ing = aturIng();
   el.querySelectorAll("[data-ing]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.ing; ing[k] = !ing[k];
-    b.textContent = ing[k] ? "✅ Nyala" : "⏭️ Mati"; b.className = "tbl tbl-kecil " + (ing[k] ? "tbl-hijau" : "tbl-putih"); b.setAttribute("aria-pressed", ing[k]); bunyi.klik(); simpanAtur(true); }));
+    b.textContent = ing[k] ? "✅ Nyala" : "⏭️ Mati"; b.className = "tbl tbl-kecil " + (ing[k] ? "tbl-hijau" : "tbl-putih"); b.setAttribute("aria-pressed", ing[k]); if (k === "baca") $("#o-bacamin-baris").style.opacity = ing.baca ? "" : ".5"; bunyi.klik(); simpanAtur(true); }));
   $("#o-ulang").addEventListener("click", e => { ulang = !ulang; e.target.textContent = ulang ? "✅ Nyala" : "⏭️ Mati"; e.target.className = "tbl tbl-kecil " + (ulang ? "tbl-hijau" : "tbl-putih"); e.target.setAttribute("aria-pressed", ulang); bunyi.klik(); simpanAtur(true); });
   /* Tersimpan otomatis setiap ada perubahan (12 Okt 2026): dulu hanya lewat tombol Simpan di bawah, sehingga perubahan
      (mis. tanggal TKA) hilang bila halaman ditinggalkan sebelum menekannya */
@@ -582,9 +583,9 @@ function ortuAtur(el) {
     const soal = +$("#o-soal").value, tol = +$("#o-tol").value, tolU = +$("#o-tolu").value;
     if (tol >= soal) return tampilPesan("Toleransi mode belajar harus lebih kecil dari jumlah soal.");
     if (tolU >= soal) return tampilPesan("Toleransi mode ujian harus lebih kecil dari jumlah soal.");
-    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian, lewatBatas: $("#o-lewat").value, menitHarian: +$("#o-menit").value, hariBelajar: [...hb].sort(), hariSimulasi: [...hs].sort(), ingTarget: $("#o-ingtarget").value || "", ingHari: [...ih].sort(), ingSampai: +$("#o-ingsampai").value,ingDengar: ing.dengar, ingBaca: ing.baca, ingUcap: ing.ucap, ingSyarat: ing.syarat }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan(otomatis ? "✅ Tersimpan" : "✅ Pengaturan disimpan", otomatis ? 1400 : 2600); };
+    S.profil.nama = n; S.profil.avatar = $("#o-av").value; S.tka = $("#o-tka").value || ""; S.atur = { soal, toleransi: tol, toleransiUjian: tolU, ulang, ujian, lewatBatas: $("#o-lewat").value, menitHarian: +$("#o-menit").value, hariBelajar: [...hb].sort(), hariSimulasi: [...hs].sort(), ingTarget: $("#o-ingtarget").value || "", ingHari: [...ih].sort(), ingSampai: +$("#o-ingsampai").value,ingDengar: ing.dengar, ingBaca: ing.baca, ingBacaMin: +$("#o-bacamin").value, ingUcap: ing.ucap, ingSyarat: ing.syarat }; S.waktu = { ...(S.waktu || {}), atur: Date.now() }; simpanData(); pasangKepala(); tampilPesan(otomatis ? "✅ Tersimpan" : "✅ Pengaturan disimpan", otomatis ? 1400 : 2600); };
   $("#o-simpan").addEventListener("click", () => simpanAtur(false));
-  ["#o-nama", "#o-av", "#o-tka", "#o-soal", "#o-tol", "#o-tolu", "#o-lewat", "#o-menit", "#o-ingtarget", "#o-ingsampai"].forEach(q => $(q).addEventListener("change", () => simpanAtur(true)));
+  ["#o-nama", "#o-av", "#o-tka", "#o-soal", "#o-tol", "#o-tolu", "#o-lewat", "#o-menit", "#o-ingtarget", "#o-ingsampai", "#o-bacamin"].forEach(q => $(q).addEventListener("change", () => simpanAtur(true)));
   $("#o-unduh").addEventListener("click", async () => { const nm = `petualangan-tka-${S.profil.nama.replace(/\W+/g, "-").toLowerCase()}-${hariIni()}.json`; try { await simpanBerkas(JSON.stringify(S), nm, "application/json"); tampilPesan(pesanSimpan("diunduh", nm), 4000); } catch (e) { tampilPesan("Unduhan gagal. Jika memakai VPN atau ekstensi peramban, matikan dulu lalu coba lagi.", 5000); } });
   $("#o-pulih").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const x = JSON.parse(r.result); if (x.v !== 1 || !x.profil) throw 0;
       dialog(`<div style="font-size:48px">⬆️</div><h2>Pulihkan cadangan?</h2><p class="ket">Kemajuan <b>${esc(x.profil.nama)}</b> akan menggantikan kemajuan di perangkat ini.</p>`, [["Ya, pulihkan", "tbl-utama", () => { S = Object.assign(bawaan(), x); simpanData(); tampilPesan("✅ Cadangan dipulihkan"); tampil("beranda"); }], ["Batal", "tbl-putih", null]]);

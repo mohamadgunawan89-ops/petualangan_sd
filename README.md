@@ -53,7 +53,7 @@ bagian gambar → kalimatnya tampil dan dibacakan. Level berikon juga mendapat s
 Inggris adalah …") di level 1–3 dan sub level Kenali. Data `ilustrasi`/`ikon`/`catatanIlus` ikut disalin `salin-inggris.js`.
 
 Pengaturan orang tua (`S.atur.ingDengar/ingBaca/ingUcap/ingSyarat`, bawaan nyala): wajib dengar, wajib Baca & Koreksi,
-sub level Ucapkan pakai mikrofon (mati = mengetik/menyusun), dan Level 1 baru terbuka setelah 5 sub level tuntas (hanya
+sub level Ucapkan pakai mikrofon (mati = mengetik/menyusun), akurasi minimal Baca & Koreksi (`ingBacaMin`, 50–95%, bawaan 75%), dan Level 1 baru terbuka setelah 5 sub level tuntas (hanya
 misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati otomatis. Kemajuan di `S.ing[idMisi]`
 (`d`, `dh`, `b`, `s[5]`), ikut tersinkron (gabung = nilai terbesar). Pos 7 "Teks Pendek" = Tahap 2 English Reading
 (3 pola + 7 bacaan), disalin oleh `node alat/salin-inggris.js`.

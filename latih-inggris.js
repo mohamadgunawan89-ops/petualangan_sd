@@ -3,7 +3,7 @@
    Meniru alur English Reading, sebagai TAMBAHAN di depan 10 level setiap misi Bahasa Inggris:
      1. Dengarkan seluruh teks (speechSynthesis; kalimat yang dibacakan disorot, kata bisa diketuk).
      2. Baca & Koreksi: anak membaca keras, mikrofon (SpeechRecognition) menilai tiap kata;
-        teks harus dibaca sampai habis dengan akurasi ≥ 75%.
+        teks harus dibaca sampai habis dengan akurasi ≥ 75% (bisa diubah orang tua: S.atur.ingBacaMin).
      3. Lima sub level (10 soal). Nilai = jawaban benar pada percobaan pertama; soal yang salah diulang
         dengan soal lain di akhir tanpa menambah nilai. Sub level berikutnya terbuka bila nilai ≥ 80%.
    Pengaturan orang tua (S.atur): ingDengar, ingBaca, ingUcap, ingSyarat (Level 1 baru terbuka setelah
@@ -27,6 +27,9 @@ const misiInggris = id => /^en-/.test(id || "") && !!enLevel(id.slice(3));
 const lvIng = id => enLevel(id.slice(3));
 const jenisIng = lv => (lv.kosakata ? "kata" : lv.pola ? "pola" : "bacaan");
 const aturIng = () => { const a = S.atur || {}; return { dengar: a.ingDengar !== false, baca: a.ingBaca !== false, ucap: a.ingUcap !== false, syarat: a.ingSyarat !== false }; };
+/* Akurasi minimal Baca & Koreksi diatur orang tua (S.atur.ingBacaMin, bawaan 75%) */
+const PILIHAN_BACA = [50, 60, 65, 70, 75, 80, 85, 90, 95];
+const bacaMin = () => { const v = +(S.atur || {}).ingBacaMin; return PILIHAN_BACA.includes(v) ? v : ING_LULUS_BACA; };
 const bisaDengarEN = () => typeof window !== "undefined" && "speechSynthesis" in window && adaSuaraInggris();
 const bisaMikEN = () => !!SR_ING;
 const lajuEN = () => (LAJU_EN.some(x => x[0] === S.lajuEn) ? S.lajuEn : 0.75);
@@ -34,7 +37,7 @@ const ingLihat = id => { const x = (S.ing && S.ing[id]) || {}; return { d: x.d |
 function dataIng(id) { const x = ((S.ing ||= {})[id] ||= {}); x.s ||= [0, 0, 0, 0, 0]; return x; }
 const bolehSimpanIng = () => S.peran !== "ortu";
 const perluDengar = id => aturIng().dengar && bisaDengarEN() && !ingLihat(id).d;
-const perluBaca = id => aturIng().baca && bisaMikEN() && ingLihat(id).b < ING_LULUS_BACA;
+const perluBaca = id => aturIng().baca && bisaMikEN() && ingLihat(id).b < bacaMin();
 const subTerbuka = (id, n) => (n === 0 ? !perluDengar(id) && !perluBaca(id) : ingLihat(id).s[n - 1] >= ING_LULUS_SUB);
 const subTuntas = id => ingLihat(id).s.filter(v => v >= ING_LULUS_SUB).length;
 const latihTuntas = id => subTuntas(id) === 5;
@@ -204,7 +207,7 @@ function htmlTangga(id) {
   const x = ingLihat(id), nama = NAMA_SUB[jenisIng(lvIng(id))], a = aturIng();
   const syarat = [];
   if (a.dengar && bisaDengarEN()) syarat.push([!!x.d, `Dengarkan seluruh teks${x.d ? "" : x.dh.length ? ` (${x.dh.length}/${LB && LB.id === id ? LB.unit.length : "…"} kalimat)` : ""}`]);
-  if (a.baca && bisaMikEN()) syarat.push([x.b >= ING_LULUS_BACA, `Baca &amp; Koreksi sampai habis, akurasi ≥ ${ING_LULUS_BACA}%${x.b ? ` (terbaik ${x.b}%)` : ""}`]);
+  if (a.baca && bisaMikEN()) syarat.push([x.b >= bacaMin(), `Baca &amp; Koreksi sampai habis, akurasi ≥ ${bacaMin()}%${x.b ? ` (terbaik ${x.b}%)` : ""}`]);
   return `<h3>🧩 Latihan bertahap</h3>
     ${syarat.length && !subTerbuka(id, 0) ? `<div class="lt-syarat"><b>🔒 Sebelum sub level 1 terbuka:</b>${syarat.map(([ok, t]) => `<div class="${ok ? "ok" : ""}"><span>${ok ? "✓" : ""}</span>${t}</div>`).join("")}</div>` : ""}
     <div class="lt-tangga">${nama.map((nm, n) => { const v = x.s[n], lulus = v >= ING_LULUS_SUB, buka = subTerbuka(id, n);
@@ -296,9 +299,9 @@ function akhiriBaca() {
   const pujian = persen >= 95 ? "Excellent! 🎉" : persen >= 85 ? "Great job! 👍" : persen >= 60 ? "Good, keep practicing!" : "Keep trying, you can do it!";
   const lemah = [...new Map(LB.kata.map((k, i) => [k.tk.join(" "), { k, v: perKata[i] }]).filter(([kk, o]) => kk && o.v != null && o.v < 85)).values()].sort((a, b) => a.v - b.v).slice(0, 8);
   layar.querySelector("#lt-hasil").innerHTML = !dibaca.length ? `<div class="umpan salah"><h3>Belum terdengar</h3><div>Aplikasi belum menangkap bacaanmu. Dekatkan HP, baca lebih keras, lalu coba lagi.</div></div>`
-    : `<div class="lt-skor ${persen >= ING_LULUS_BACA && lengkap ? "lulus" : ""}"><div class="lt-cincin">${persen}%</div><div><b>${lengkap ? pujian : "Bacaan belum sampai akhir"}</b>
+    : `<div class="lt-skor ${persen >= bacaMin() && lengkap ? "lulus" : ""}"><div class="lt-cincin">${persen}%</div><div><b>${lengkap ? pujian : "Bacaan belum sampai akhir"}</b>
         <div class="ket">${lengkap ? `${tepat} dari ${total} kata dibaca dengan tepat` : `${sisa} kata belum dibaca. Skor dicatat bila teks dibaca sampai habis.`}</div>
-        ${lengkap ? `<div class="ket"><b>${baru ? "🏅 Skor terbaik baru! " : ""}${persen >= ING_LULUS_BACA ? `Syarat ${ING_LULUS_BACA}% terpenuhi.` : `Perlu ${ING_LULUS_BACA}% untuk membuka sub level 1.`}</b></div>` : ""}</div></div>
+        ${lengkap ? `<div class="ket"><b>${baru ? "🏅 Skor terbaik baru! " : ""}${persen >= bacaMin() ? `Syarat ${bacaMin()}% terpenuhi.` : `Perlu ${bacaMin()}% untuk membuka sub level 1.`}</b></div>` : ""}</div></div>
       ${lemah.length ? `<div class="lt-lemah"><b>Latih kata yang belum tepat</b>${lemah.map(({ k, v }, i) => `<div class="lt-lemah-baris"><span class="${kelasNilai(v)}">${esc(k.teks.replace(/[.,!?;:"“”]/g, ""))} <small>· ${v}%</small></span>
         <button type="button" class="tbl tbl-putih tbl-kecil" data-dengar="${i}" aria-label="Dengarkan">🔊</button><button type="button" class="tbl tbl-biru tbl-kecil" data-ulang="${i}" aria-label="Ucapkan lagi">🎤</button><span class="lt-lemah-hasil" id="lt-lh-${i}"></span></div>`).join("")}</div>` : ""}`;
   layar.querySelector("#lt-hasil").onclick = e => { const d = e.target.closest("[data-dengar]"), u = e.target.closest("[data-ulang]"); if (!d && !u) return; const k = lemah[+(d || u).dataset[d ? "dengar" : "ulang"]].k, kata = k.teks.replace(/[^\w'’\- :]/g, "");
@@ -307,7 +310,7 @@ function akhiriBaca() {
     dengarSekali(6000, (alts, g) => { if (!alts) { out.textContent = pesanMik(g || "no-speech"); return; } const v = nilaiUcapanKata([kata], alts);
       out.innerHTML = v >= 70 ? `<span class="lt-b">✓ Bagus! (${v}%)</span>` : `<span class="lt-k">Coba lagi (${v}%) · terdengar: “${esc(alts[0].t)}”</span>`; }); };
   pasangTangga(LB.id);
-  if (lengkap && persen >= ING_LULUS_BACA) { bunyi.lulus(); } else if (dibaca.length) bunyi.klik();
+  if (lengkap && persen >= bacaMin()) { bunyi.lulus(); } else if (dibaca.length) bunyi.klik();
   layar.querySelector("#lt-hasil").scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
