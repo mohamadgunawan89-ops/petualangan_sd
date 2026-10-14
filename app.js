@@ -134,12 +134,21 @@ function pialaSVG(jenis, ikon = "") {
 /* ================= Kerangka layar ================= */
 const layar = document.getElementById("layar"), kepala = document.getElementById("kepala"), kepalaIsi = document.getElementById("kepala-isi"), nav = document.getElementById("nav");
 let layarKini = "", argKini, izinOrtu = false;
+/* Tombol Panduan di kepala halaman (15 Okt 2026), untuk siapa saja (tanpa PIN): PDF untuk dibuka, Word untuk dicetak/disunting.
+   Berkasnya dibuat ulang dengan `node alat/buat-panduan.js`. */
+const BERKAS_PANDUAN = "Panduan_Petualangan_TKA_SD";
+const tautanPanduan = () => `<a href="${BERKAS_PANDUAN}.pdf" target="_blank" rel="noopener">Buka panduan (PDF)<small>Langsung terbuka di browser, cocok untuk HP</small></a>
+  <a href="${BERKAS_PANDUAN}.docx" download>Unduh versi Word (.docx)<small>Untuk dicetak atau disunting</small></a>`;
+const tombolPanduan = () => `<details class="panduan" id="panduan"><summary title="Panduan aplikasi" aria-label="Panduan"><span aria-hidden="true">📘</span><span class="p-teks">Panduan</span></summary>
+  <div class="panduan-menu"><p>Cara memakai aplikasi, membaca Dasbor Ortu, dan memahami hasil belajar anak.</p>${tautanPanduan()}</div></details>`;
+document.addEventListener("click", e => { const p = document.getElementById("panduan"); if (p && p.open && !p.contains(e.target)) p.open = false; });
+document.addEventListener("keydown", e => { const p = document.getElementById("panduan"); if (e.key === "Escape" && p) p.open = false; });
 function pasangKepala(kembali, arg) {
   kepala.hidden = false;
   kepalaIsi.innerHTML = `${kembali ? `<button class="kembali" data-ke="${kembali}"${arg ? ` data-arg="${arg}"` : ""} aria-label="Kembali">←</button>` : ""}
     <div class="avatar" aria-hidden="true">${S.profil.avatar}</div>
     <div style="min-width:0"><div class="nama">${esc(S.profil.nama)}</div><div class="gelar">${gelar()}</div></div>
-    <div class="kanan"><span class="chip" title="Koin">💰 ${fmt(S.koin)}</span><span class="chip ${apiAktif() ? "" : "api-mati"}" title="Hari berturut-turut">🔥 ${apiAktif() ? S.api.n : 0}</span></div>`;
+    <div class="kanan"><span class="chip" title="Koin">💰 ${fmt(S.koin)}</span><span class="chip ${apiAktif() ? "" : "api-mati"}" title="Hari berturut-turut">🔥 ${apiAktif() ? S.api.n : 0}</span>${tombolPanduan()}</div>`;
 }
 function pasangNav(aktif) { nav.hidden = !aktif; nav.querySelectorAll("button").forEach(b => { if (b.dataset.ke === aktif) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); }); }
 function tampil(nama_, arg) {
@@ -167,7 +176,8 @@ function lSambut() {
       <span class="lbl-isian">Pilih teman petualanganmu</span><div class="pilih-avatar" id="av">${AVATAR.map(a => `<button type="button" aria-pressed="${a === pilihAv}" data-av="${a}">${a}</button>`).join("")}</div>
       <label class="lbl-isian" for="in-tka">Tanggal TKA <span class="ket">(boleh diisi nanti oleh orang tua)</span></label><input id="in-tka" type="date" class="isian-teks" value="${S.tka}">
       <button class="tbl tbl-utama tbl-lebar" id="mulai" style="margin-top:20px">Mulai Petualangan 🚀</button>
-      <button class="tbl tbl-putih tbl-lebar" id="punya-kode" style="margin-top:10px">☁️ Sudah punya Kode Anak?</button></div>`;
+      <button class="tbl tbl-putih tbl-lebar" id="punya-kode" style="margin-top:10px">☁️ Sudah punya Kode Anak?</button></div>
+    <div class="kartu panduan-sambut"><b>📘 Panduan aplikasi</b><span class="ket">Cara bermain, rencana belajar, dan membaca Dasbor Ortu.</span>${tautanPanduan()}</div>`;
   layar.querySelector("#punya-kode").addEventListener("click", () => { bunyi.klik();
     const l = dialog(`<div style="font-size:48px">☁️</div><h2>Masukkan Kode Anak</h2><p class="ket">Ketik Kode Anak dari HP anak (lihat di HP anak: <b>Orang Tua → Pengaturan → Kode Anak</b>).</p><input class="isian-teks" id="kode-sambut" maxlength="9" autocomplete="off" placeholder="XXXX-XXXX" style="text-align:center;letter-spacing:.1em">`,
       [["Sambungkan", "tbl-utama", () => sambungkanKode(kode)], ["Batal", "tbl-putih", null]]);

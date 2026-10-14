@@ -2,3 +2,4 @@
 .env
 # Berkas pemindahan berisi data anak (hanya di komputer ini)
 .pindah/
+node_modules/

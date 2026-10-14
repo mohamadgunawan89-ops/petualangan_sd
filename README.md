@@ -96,6 +96,16 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
   dihitung 2 tugas. Dijadwalkan lebih dulu, tetapi selama materi TKA masih ada paling banyak separuh waktu hari itu;
   bila tidak muat, ringkasan memberi perkiraan selesai dan menit yang dibutuhkan.
 
+## Panduan (15 Okt 2026)
+
+- Tombol **📘 Panduan** di kepala halaman (semua layar berkepala, tanpa PIN) dan kartu di layar sambutan membuka
+  `Panduan_Petualangan_TKA_SD.pdf` (dibuka di browser) dan `Panduan_Petualangan_TKA_SD.docx` (diunduh), seperti tombol
+  Panduan di Matematika Dasar / English Reading. Isinya: mengenal aplikasi, memulai (HP anak/ortu, Kode Anak), cara
+  bermain, Rencana Belajar, cara membaca Dasbor Ortu, Materi & Level Soal, Pengaturan, dan "dari data ke tindakan".
+- Kedua berkas dibuat dari **satu sumber** `alat/buat-panduan.js` (isi di larik `ISI`). Bila tampilan/aturan berubah, ubah
+  isinya lalu jalankan: `npm i --no-save --no-package-lock docx@9` (sekali) dan `node alat/buat-panduan.js`. PDF dicetak
+  Chrome/Edge tanpa jendela (variabel `CHROME` bila lokasinya lain). PIN orang tua sengaja **tidak** ditulis di panduan.
+
 ## Database (Supabase sendiri, sejak 11 Okt 2026)
 
 - Proyek Supabase: `gwanpjezsokmxulebing` (alamat & kunci publik di `config.js`; kunci publik memang boleh terlihat).

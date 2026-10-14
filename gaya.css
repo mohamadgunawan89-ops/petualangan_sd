@@ -56,6 +56,24 @@ input, select { font: inherit; }
 .kepala .kanan { margin-left: auto; display: flex; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.12); border-radius: 999px; padding: 4px 10px; font-weight: 800; font-size: 15px; white-space: nowrap; }
 .chip.api-mati { opacity: .55; }
+.kepala .nama { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Tombol Panduan di kepala halaman (15 Okt 2026): menu PDF / Word */
+.panduan { position: relative; }
+.panduan > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.25); font-weight: 800; font-size: 15px; white-space: nowrap; }
+.panduan > summary::-webkit-details-marker { display: none; }
+.panduan > summary:hover, .panduan[open] > summary { border-color: var(--emas); background: rgba(255,255,255,.2); }
+.panduan > summary:focus-visible { outline: 3px solid var(--emas); outline-offset: 2px; }
+.panduan-menu { position: absolute; right: 0; top: calc(100% + 10px); width: min(300px, calc(100vw - 32px)); background: #fff; color: var(--tinta);
+  border-radius: var(--r2); box-shadow: 0 10px 30px rgba(29,42,58,.3); padding: 8px; z-index: 30; }
+.panduan-menu p { margin: 4px 10px 6px; font-size: 13px; color: var(--tinta-2); font-weight: 600; }
+.panduan-menu a, .panduan-sambut a { display: block; padding: 10px 12px; border-radius: var(--r1); color: var(--gelap); font-weight: 800; text-decoration: none; }
+.panduan-menu a:hover, .panduan-sambut a:hover { background: var(--langit); }
+.panduan-menu small, .panduan-sambut small { display: block; font-weight: 600; color: var(--tinta-2); font-size: 13px; margin-top: 1px; }
+.panduan-sambut { display: flex; flex-direction: column; gap: 2px; }
+.panduan-sambut > .ket { margin-bottom: 4px; }
+@media (max-width: 560px) { .panduan > summary .p-teks { display: none; } .panduan > summary { padding: 4px 8px; }
+  .panduan-menu { position: fixed; left: 16px; right: 16px; top: 72px; width: auto; } }
 .kembali { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 22px; color: #fff; flex: none; }
 
 /* ---------- Kartu umum ---------- */
