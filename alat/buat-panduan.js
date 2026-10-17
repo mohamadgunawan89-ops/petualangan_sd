@@ -11,7 +11,7 @@
 const fs = require("fs"), path = require("path"), os = require("os"), { spawn } = require("child_process");
 
 const AKAR = path.join(__dirname, ".."), NAMA = "Panduan_Petualangan_TKA_SD";
-const JUDUL = "Panduan Petualangan TKA SD", VERSI = "15 Oktober 2026";
+const JUDUL = "Panduan Petualangan TKA SD", VERSI = "17 Oktober 2026";
 
 /* ================= Isi panduan =================
    Blok: H1/H2/H3 (judul, dinomori otomatis), P (paragraf), UL/OL (daftar), TB (tabel: kepala, baris, lebar relatif),
@@ -47,7 +47,7 @@ const ISI = [
     ["7", "Sulit", "Soal bertingkat."],
     ["8", "**Setara TKA**", "Tingkat kesulitan sama dengan soal TKA."],
     ["9", "Di Atas TKA", "Lebih sulit dari TKA (soal penalaran/HOTS)."],
-    ["10", "Bos Terakhir", "Penutup misi. Lulus Level 10 = **misi selesai** dan mendapat piala misi."],
+    ["10", "Bos Terakhir", "Penutup misi. Lulus Level 10 = **misi selesai** dan mendapat piala misi. Di **Matematika** dan **Bahasa Indonesia**, soal Level 10 adalah campuran soal Level 8 dan 9 (tidak lebih sulit dari Level 9)."],
   ], [0.8, 1.4, 4.2]),
   H2("Istilah yang sering muncul"),
   TB(["Istilah", "Arti yang dipakai aplikasi"], [

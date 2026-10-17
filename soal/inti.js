@@ -137,7 +137,11 @@ const keTKA = (f, L = 6) => Object.assign(f, { keLevel: L });
 function daftarMisi(pos, id, judul, ikon, tingkat) {
   for (let L = 1; L <= 5; L++) (tingkat[L] || []).filter(f => f.keLevel).forEach(f => { tingkat[f.keLevel].push(f); tingkat[L] = tingkat[L].filter(g => g !== f); });
   for (let L = 1; L <= 10; L++) if (!tingkat[L] || !tingkat[L].length) throw new Error(`Misi ${id} level ${L} kosong`);
-  MISI.push({ pos, pulau: POS.find(p => p.id === pos).pulau, id, judul, ikon, tingkat });
+  const pulau = POS.find(p => p.id === pos).pulau;
+  /* Matematika & Bahasa Indonesia (17 Okt 2026): Level 10 terlalu sulit untuk anak SD, jadi soalnya diambil dari Level 8
+     (setara TKA) dan Level 9 secara campuran. Cetakan Level 10 lama tetap di berkas soal, hanya tidak dipakai. */
+  if (pulau === "mtk" || pulau === "bin") tingkat[10] = [...tingkat[8], ...tingkat[9]];
+  MISI.push({ pos, pulau, id, judul, ikon, tingkat });
 }
 const cariMisi = id => MISI.find(m => m.id === id);
 

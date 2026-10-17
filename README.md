@@ -58,6 +58,12 @@ misi yang belum dimulai). Tanpa suara/mikrofon di peramban, langkah itu dilewati
 (`d`, `dh`, `b`, `s[5]`), ikut tersinkron (gabung = nilai terbesar). Pos 7 "Teks Pendek" = Tahap 2 English Reading
 (3 pola + 7 bacaan), disalin oleh `node alat/salin-inggris.js`.
 
+## Level 10 Matematika & Bahasa Indonesia (17 Okt 2026)
+
+Level 10 Matematika dan Bahasa Indonesia dinilai terlalu sulit untuk anak SD. Sejak 17 Okt 2026 `daftarMisi` (soal/inti.js) mengisi Level 10
+misi Matematika dan Bahasa Indonesia dengan gabungan cetakan Level 8 dan 9 (`tingkat[10] = [...tingkat[8], ...tingkat[9]]`); cetakan Level 10
+lama tetap ada di berkas soal tetapi tidak dipakai. Bahasa Inggris tidak berubah.
+
 ## Materi & pembahasan bertahap Matematika (12 Okt 2026)
 
 - **📖 Pelajari dulu** (kartu di jalur setiap misi Matematika → layar `materi`, `materi.js`): teori singkat bergambar,
