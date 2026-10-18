@@ -24,7 +24,10 @@ async function rpcPts(fn, arg) {
 }
 const kodeTampil = k => (k ? k.slice(0, 4) + "-" + k.slice(4) : "");
 const kodeBersih = k => String(k || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-function dataKirim(x) { const d = {}; for (const k in x) if (!BAGIAN_LOKAL.includes(k)) d[k] = x[k]; return d; }
+function dataKirim(x) { const d = {}; for (const k in x) if (!BAGIAN_LOKAL.includes(k)) d[k] = x[k];
+  // Server menolak data > 300 KB: contoh soal salah dikurangi lebih dulu (kemajuan lain tetap utuh)
+  while (d.salah?.length && JSON.stringify(d).length > 280000) d.salah = d.salah.slice(Math.ceil(d.salah.length / 2));
+  return d; }
 const adaKemajuan = x => !!(x && x.profil && (x.log?.length || Object.values(x.misi || {}).some(m => m.total) || Object.keys(x.posTes || {}).length));
 
 /* a = kemajuan di perangkat ini, b = kemajuan di server */
@@ -55,6 +58,7 @@ function gabungKemajuan(a, b) {
   const ca = a.rencanaCatatan || {}, cb = b.rencanaCatatan || {};
   g.rencanaCatatan = Object.fromEntries([...new Set([...Object.keys(ca), ...Object.keys(cb)])].sort().slice(-60).map(k => {
     const x = ca[k], y = cb[k]; return [k, !x ? y : !y ? x : (y.s > x.s || (y.s === x.s && y.t > x.t) ? y : x)]; }));
+  g.salah = gabungSalah(a.salah, b.salah);   // soal yang terakhir dijawab salah (kesulitan.js)
   g.koin = Math.max(a.koin || 0, b.koin || 0);
   const api = [a.api, b.api].filter(x => x && x.tgl).sort((p, q) => (p.tgl === q.tgl ? q.n - p.n : p.tgl < q.tgl ? 1 : -1))[0];
   g.api = api ? { ...api } : { n: 0, tgl: "" };

@@ -11,7 +11,7 @@
 const fs = require("fs"), path = require("path"), os = require("os"), { spawn } = require("child_process");
 
 const AKAR = path.join(__dirname, ".."), NAMA = "Panduan_Petualangan_TKA_SD";
-const JUDUL = "Panduan Petualangan TKA SD", VERSI = "17 Oktober 2026";
+const JUDUL = "Panduan Petualangan TKA SD", VERSI = "18 Oktober 2026";
 
 /* ================= Isi panduan =================
    Blok: H1/H2/H3 (judul, dinomori otomatis), P (paragraf), UL/OL (daftar), TB (tabel: kepala, baris, lebar relatif),
@@ -209,7 +209,7 @@ const ISI = [
 
   H1("Membaca Dasbor Ortu"),
   P("Buka **👨‍👩‍👧 Orang Tua → 📊 Dasbor Ortu**. Isinya dari atas ke bawah:"),
-  OL("Kartu ringkasan", "Target vs kemajuan nyata (dengan Catatan 14 hari terakhir)", "Pos Tes", "Simulasi TKA", "Aktivitas terakhir", "Kemajuan per misi"),
+  OL("Kartu ringkasan", "🔍 Di mana anak kesulitan", "Target vs kemajuan nyata (dengan Catatan 14 hari terakhir)", "Pos Tes", "Simulasi TKA", "Aktivitas terakhir", "Kemajuan per misi"),
   H2("Kartu ringkasan"),
   STAT("Gambaran kartu ringkasan (angka hanya contoh)", ["1.240", "soal dikerjakan"], ["82%", "jawaban benar"], ["17", "level minggu ini"]),
   TB(["Bagian", "Arti", "Cara membaca"], [
@@ -220,6 +220,15 @@ const ISI = [
     ["**Perlu latihan tambahan**", "Tiga misi dengan akurasi terendah (minimal 10 soal).", "Mulailah pendampingan dari misi ini."],
     ["**☁️ Tersimpan online**", "Kode Anak, waktu sinkron terakhir, dan apakah ada perubahan yang belum terkirim.", "Bila lama tidak berubah, minta anak membuka aplikasi saat ada internet."],
   ], [1.6, 2.6, 2.2]),
+  H2("Di mana anak kesulitan"),
+  P("Kartu **🔍 Di mana anak kesulitan** menjawab: **\"Materi mana yang membuat anak tersendat, dan salahnya seperti apa?\"** Isinya tiga bagian:"),
+  TB(["Bagian", "Arti", "Cara membaca"], [
+    ["**Misi & level yang paling sulit**", "Paling banyak 6 pasangan misi + level dengan akurasi di bawah 70% (minimal 5 jawaban) atau yang **2× atau lebih belum lulus**, diurutkan dari yang paling sulit. Batang hijau ≥ 75%, kuning 60–74%, merah < 60%.", "Label **masih tersangkut** = level itu belum lulus sampai sekarang; **sudah lulus** = sempat gagal, tetapi akhirnya lulus."],
+    ["**Pos/jurus di Pos Tes & Simulasi TKA**", "Persen benar per pos/jurus dari 3 hasil terakhir setiap tes, dari yang terlemah. Label **perlu diperkuat** bila di bawah 60%.", "Pos/jurus paling atas adalah materi yang paling perlu diulang sebelum TKA."],
+    ["**❌ Soal yang terakhir dijawab salah**", "10 soal salah terbaru: soal, **jawaban anak**, kunci, dan pembahasan.", "Bandingkan jawaban anak dengan kunci untuk melihat pola salahnya, mis. selalu lupa menyederhanakan pecahan."],
+  ], [1.8, 2.8, 2.2]),
+  P("Ketuk satu baris misi untuk membuka soal-soal yang salah di misi itu (level yang sama ditampilkan lebih dulu). Tombol **📚 Lihat contoh soal & coba level ini** membuka misi itu di tab **Materi & Level Soal**."),
+  KOTAK("info", "Catatan data", "Akurasi per level dihitung dari riwayat level, jadi latihan sebelum fitur ini ikut terhitung. Contoh soal yang salah baru dicatat sejak **18 Oktober 2026**: paling banyak 3 soal terbaru per misi dan 30 soal seluruhnya (Pos Tes paling banyak 6 soal per tes). Soal salah dari HP anak ikut tersimpan online, jadi terlihat juga di HP orang tua."),
   H2("Target vs kemajuan nyata"),
   P("Kartu ini menjawab: **\"Apakah anak berjalan sesuai rencana?\"** Tombol **Lihat rencana ▶** membuka layar Rencana."),
   STAT("Gambaran kotak ringkasan (angka hanya contoh)", ["H-45", "menuju TKA"], ["41%", "siap TKA"], ["3/4", "target hari ini"], ["78%", "hari target tercapai (14 hari)"]),
@@ -324,10 +333,10 @@ const ISI = [
   TB(["Situasi", "Terlihat di", "Tindakan yang disarankan"], [
     ["Anak tertinggal dari jadwal", "Dasbor → label ⏳ Tertinggal; Catatan 14 hari banyak ✖", "Bila banyak \"tidak dibuka\": sepakati jam belajar tetap. Bila banyak 🟡: tambah menit atau hari belajar."],
     ["Waktu tidak cukup sampai TKA", "Rencana → Ringkasan ⚠️ \"Waktunya belum cukup\"", "Tambah menit atau hari belajar, atau kurangi jumlah soal per level."],
-    ["Akurasi rendah di satu misi", "Dasbor → Perlu latihan tambahan; Kemajuan per misi kolom Hasil", "Lihat Contoh di Materi & Level Soal; ajak anak membaca 📖 Pelajari dulu; ulangi level berbintang sedikit."],
-    ["Anak tertahan di satu level", "Aktivitas terakhir: level sama berulang \"belum lulus\"", "Dampingi satu putaran; longgarkan toleransi atau pilih \"Lanjut sampai akhir\" sementara."],
+    ["Akurasi rendah di satu misi", "Dasbor → 🔍 Di mana anak kesulitan; Kemajuan per misi kolom Hasil", "Buka baris misinya untuk melihat soal yang salah dan jawaban anak; lihat Contoh di Materi & Level Soal; ajak anak membaca 📖 Pelajari dulu; ulangi level berbintang sedikit."],
+    ["Anak tertahan di satu level", "🔍 Di mana anak kesulitan: label masih tersangkut; Aktivitas terakhir: level sama berulang \"belum lulus\"", "Dampingi satu putaran; longgarkan toleransi atau pilih \"Lanjut sampai akhir\" sementara."],
     ["Lulus, tetapi bintang sedikit", "Kemajuan per misi kolom ⭐", "Anak sering memakai petunjuk atau kurang teliti; ajak mengulang level untuk 3 bintang."],
-    ["Nilai Pos Tes di bawah 70", "Dasbor → Pos Tes; layar hasil tabel per materi", "Ulangi misi pada materi yang di bawah 60%, lalu kerjakan ulang tesnya."],
+    ["Nilai Pos Tes di bawah 70", "Dasbor → Pos Tes; 🔍 Di mana anak kesulitan → Pos/jurus", "Ulangi misi pada materi yang di bawah 60%, lalu kerjakan ulang tesnya."],
     ["Nilai simulasi naik-turun", "Dasbor → Simulasi TKA", "Bahas pembahasannya bersama, lalu ulangi paket yang sama untuk melihat pemahaman."],
     ["Baca & Koreksi tidak pernah lulus", "Kemajuan per misi: \"🎧 0/5 · baca 60%\"", "Coba di tempat tenang; turunkan akurasi minimal atau matikan Wajib Baca & Koreksi."],
     ["Kemajuan di HP orang tua tidak berubah", "Dasbor → baris ☁️ Tersimpan online", "Pastikan HP anak tersambung internet; tekan 🔄 Perbarui sekarang; cocokkan Kode Anak di kedua HP."],

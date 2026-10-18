@@ -230,6 +230,7 @@ function kumpulkanTes(waktuHabis) {
   if (!x.coba) {
     const terbaikLama = terbaikTes(x.tid);
     (S.posTes ||= {})[x.tid] = [...riwayatTes(x.tid), { ...rek }].slice(-TES_RIWAYAT);
+    catatSalahTes(x.soal, x.jawab, hasil, x.mulai);
     koin = b * 5;
     if (nilai >= TES_TUNTAS && !S.piala["tes-" + x.tid]) { S.piala["tes-" + x.tid] = hariIni(); koin += 100;
       antrean.push(["perak", "📝", `Piala ${judulTes(t)}!`, `Nilaimu <b>${nilai}</b> di ${judulTes(t)} ${cariPulau(t.pulau).judul}. Kamu siap menghadapi soal TKA!`]); }

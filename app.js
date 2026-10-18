@@ -340,7 +340,7 @@ function periksaJawab() {
   const s = M.soal, r = periksa(s, M.jawab), d = dataMisi(M.idKini); M.diperiksa = true; if (!r.benar) { M.salah++; M.salahTotal = (M.salahTotal || 0) + 1; }   // salahTotal tidak direset saat ulang dari nomor 1
   const dt = Math.min(WAKTU_SOAL_MAKS, Math.max(0, Math.round((Date.now() - (M.tSoal || Date.now())) / 1000))); M.detik = (M.detik || 0) + dt;
   M.tanda[M.i] = r.benar ? (M.tanda[M.i] === "salah" ? "pulih" : "benar") : "salah";
-  if (!M.coba) { d.total++; d.detik = (d.detik || 0) + dt; if (r.benar) { d.benar++; S.koin += 10; } }
+  if (!M.coba) { d.total++; d.detik = (d.detik || 0) + dt; M.dijawab = (M.dijawab || 0) + 1; if (r.benar) { d.benar++; S.koin += 10; } else catatSalah(s, M.jawab, "lv"); }
   if (M.ujian) { M.rekam.push({ s, j: M.jawab, benar: r.benar }); bunyi.klik(); simpanData(); M.i++; return soalBerikut(); }
   document.getElementById("gelembung").innerHTML = "";
   const u = document.getElementById("umpan");
@@ -389,7 +389,7 @@ function selesaiLevel() {
   const pertama = lulus && d.lv < L, naikBintang = bintang > d.bin[L - 1];
   if (naikBintang) d.bin[L - 1] = bintang; if (pertama) d.lv = L;
   const bonus = lulus ? (pertama ? 20 + L * 5 : 5) : 0; S.koin += bonus;
-  S.log.push({ t: Date.now(), m: id, L, b: benar, n, lulus, dt: M.detik || 0, s: M.salahTotal || 0 }); if (S.log.length > 600) S.log.splice(0, S.log.length - 600);
+  S.log.push({ t: Date.now(), m: id, L, b: benar, n, lulus, dt: M.detik || 0, s: M.salahTotal || 0, k: M.dijawab || 0 }); if (S.log.length > 600) S.log.splice(0, S.log.length - 600);
   if (pertama && L === 10 && !S.piala["misi-" + id]) { S.piala["misi-" + id] = hariIni(); antrean.push(["perunggu", cariMisi(id).ikon, "Piala Misi!", `Kamu menaklukkan semua level <b>${cariMisi(id).judul}</b>. Piala kecil ini milikmu!`]); }
   if (bintangMisi(id) === 30 && !S.piala["emas-" + id]) { S.piala["emas-" + id] = hariIni(); antrean.push(["emas", cariMisi(id).ikon, "Piala Emas!", `Sempurna! 30 bintang di <b>${cariMisi(id).judul}</b>. Pialamu berubah menjadi emas!`]); }
   const pos = POS.find(p => p.id === cariMisi(id).pos);
@@ -491,13 +491,15 @@ function ortuDasbor(el) {
   const lemah = MISI.filter(m => dataMisi(m.id).total >= 10).sort((a, b) => dataMisi(a.id).benar / dataMisi(a.id).total - dataMisi(b.id).benar / dataMisi(b.id).total).slice(0, 3);
   el.innerHTML = `<div class="kartu"><div class="statistik"><div><b>${fmt(tot)}</b>soal dikerjakan</div><div><b>${tot ? Math.round(ben / tot * 100) : 0}%</b>jawaban benar</div><div><b>${minggu}</b>level minggu ini</div></div>
       <p class="ket" style="margin:12px 0 0">⏱️ Waktu belajar: <b>${lamaTeks(detikTotal, "belum tercatat")}</b>${detikMinggu ? ` · minggu ini <b>${lamaTeks(detikMinggu)}</b>` : ""}</p>
-      ${lemah.length ? `<p class="ket" style="margin:12px 0 0">Perlu latihan tambahan: <b>${lemah.map(m => m.judul).join(", ")}</b> (akurasi terendah).</p>` : ""}
+      ${lemah.length ? `<p class="ket" style="margin:12px 0 0">Perlu latihan tambahan: <b>${lemah.map(m => m.judul).join(", ")}</b> (akurasi terendah). Rinciannya di kartu <b>🔍 Di mana anak kesulitan</b>.</p>` : ""}
       ${S.sinkron?.kode ? `<p class="ket" style="margin:12px 0 0">☁️ Tersimpan online (Kode Anak <b>${kodeTampil(S.sinkron.kode)}</b>)${S.sinkron.terakhir ? `, terakhir ${jamPendek(S.sinkron.terakhir)}` : ""}${S.sinkron.tertunda ? " · ada perubahan yang belum terkirim" : ""}.</p>`
         : `<p class="ket" style="margin:12px 0 0">${S.sinkronMati ? "📱 Penyimpanan online dimatikan di perangkat ini; data hanya ada di perangkat ini. Nyalakan lagi di <b>Pengaturan → Kode Anak</b>." : "⏳ Kode Anak dibuat otomatis begitu perangkat ini tersambung internet. Untuk melihat kemajuan dari HP anak di sini, pilih <b>Pengaturan → Sudah punya Kode Anak?</b>."}</p>`}</div>
+    ${htmlKesulitanOrtu()}
     ${htmlRencanaOrtu()}
     ${htmlPosTesOrtu()}
     <div class="kartu"><h3>Aktivitas terakhir</h3>${akhir ? `<ul class="daftar-aktivitas">${akhir}</ul>` : '<p class="ket" style="margin:6px 0 0">Belum ada level yang diselesaikan di perangkat ini.</p>'}</div>
     <div class="kartu"><h3>Kemajuan per misi</h3><p class="ket" style="margin:4px 0 8px"><b>Posisi</b> = level yang sedang dikerjakan (dan banyak level yang sudah lulus) · <b>Hasil</b> = persen jawaban benar dan berapa kali salah · <b>Waktu</b> = lama mengerjakan soal di misi itu (satu soal dihitung paling lama 5 menit).</p><div style="overflow-x:auto"><table class="tabel-laporan"><thead><tr><th>Misi</th><th>Posisi</th><th>⭐</th><th>Hasil</th><th>Waktu</th></tr></thead><tbody>${baris}</tbody></table></div></div>`;
+  pasangKesulitanOrtu(el);
 }
 
 /* Materi & Level Soal: susunan pulau → pos → misi → 10 level, dengan contoh soal dan uji coba */
