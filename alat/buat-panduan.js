@@ -209,7 +209,7 @@ const ISI = [
 
   H1("Membaca Dasbor Ortu"),
   P("Buka **👨‍👩‍👧 Orang Tua → 📊 Dasbor Ortu**. Isinya dari atas ke bawah:"),
-  OL("Kartu ringkasan", "🔍 Di mana anak kesulitan", "Target vs kemajuan nyata (dengan Catatan 14 hari terakhir)", "Pos Tes", "Simulasi TKA", "Aktivitas terakhir", "Kemajuan per misi"),
+  OL("Kartu ringkasan", "📲 Laporan untuk keluarga", "🔍 Di mana anak kesulitan", "Target vs kemajuan nyata (dengan Catatan 14 hari terakhir)", "Pos Tes", "Simulasi TKA", "Aktivitas terakhir", "Kemajuan per misi"),
   H2("Kartu ringkasan"),
   STAT("Gambaran kartu ringkasan (angka hanya contoh)", ["1.240", "soal dikerjakan"], ["82%", "jawaban benar"], ["17", "level minggu ini"]),
   TB(["Bagian", "Arti", "Cara membaca"], [
@@ -220,6 +220,19 @@ const ISI = [
     ["**Perlu latihan tambahan**", "Tiga misi dengan akurasi terendah (minimal 10 soal).", "Mulailah pendampingan dari misi ini."],
     ["**☁️ Tersimpan online**", "Kode Anak, waktu sinkron terakhir, dan apakah ada perubahan yang belum terkirim.", "Bila lama tidak berubah, minta anak membuka aplikasi saat ada internet."],
   ], [1.6, 2.6, 2.2]),
+  H2("Laporan untuk keluarga"),
+  P("Kartu **📲 Laporan untuk keluarga** menyusun pesan WhatsApp berisi ringkasan dan saran, siap dikirim ke grup keluarga (misalnya untuk ibu atau kakak). Isinya disusun aplikasi dari data anak:"),
+  TB(["Bagian pesan", "Isi"], [
+    ["**Kesimpulan**", "Satu kalimat: seberapa rutin anak berlatih, mapel yang kuat dan yang perlu didampingi, serta status jadwal TKA."],
+    ["**📊 Gambaran keseluruhan**", "Sejak mulai: jumlah soal, persen benar, waktu mengerjakan soal, dan per mapel level yang lulus serta misi yang selesai."],
+    ["**🗓️ Minggu ini**", "7 hari terakhir: hari belajar, hari berturut-turut, target harian tercapai, soal dan level lulus, waktu mengerjakan soal level per hari."],
+    ["**🎯 Menuju TKA**", "H-…, level Matematika & Bahasa Indonesia yang lulus, status jadwal, dan Simulasi TKA."],
+    ["**👏 Sudah dikuasai**", "Misi yang selesai minggu ini dan misi dengan 85% benar ke atas."],
+    ["**🧩 Perlu bantuan**", "Level yang masih tertahan, misi di bawah 65% benar, selisih antar-mapel, tanda menebak, dan kesulitan yang sudah teratasi."],
+    ["**💡 Saran minggu ini**", "Paling banyak 4 saran ditambah ajakan memuji anak di grup."],
+  ], [1.8, 4.6]),
+  P("Ketuk **Lihat & ubah isi pesan** untuk membaca atau mengubah teksnya (mis. mengganti nama panggilan anak). **💬 Kirim via WhatsApp** membuka WhatsApp; pilih grup keluarga lalu kirim. **📤 Bagikan…** memakai menu bagikan HP, **📋 Salin teks** menyalin teks untuk ditempel di mana saja. Tombol **↺ Susun ulang** mengembalikan teks dari data terbaru."),
+  KOTAK("awas", "Kode Anak tidak ikut dikirim", "Pesan ini sengaja tidak memuat Kode Anak. Siapa pun yang memegang kode itu bisa mengubah kemajuan anak. Bila anggota keluarga lain ingin memantau sendiri, masukkan kodenya langsung di HP mereka (**Pengaturan → Sudah punya Kode Anak?**)."),
   H2("Di mana anak kesulitan"),
   P("Kartu **🔍 Di mana anak kesulitan** menjawab: **\"Materi mana yang membuat anak tersendat, dan salahnya seperti apa?\"** Isinya tiga bagian:"),
   TB(["Bagian", "Arti", "Cara membaca"], [

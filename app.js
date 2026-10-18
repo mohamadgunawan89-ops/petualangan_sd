@@ -494,12 +494,13 @@ function ortuDasbor(el) {
       ${lemah.length ? `<p class="ket" style="margin:12px 0 0">Perlu latihan tambahan: <b>${lemah.map(m => m.judul).join(", ")}</b> (akurasi terendah). Rinciannya di kartu <b>🔍 Di mana anak kesulitan</b>.</p>` : ""}
       ${S.sinkron?.kode ? `<p class="ket" style="margin:12px 0 0">☁️ Tersimpan online (Kode Anak <b>${kodeTampil(S.sinkron.kode)}</b>)${S.sinkron.terakhir ? `, terakhir ${jamPendek(S.sinkron.terakhir)}` : ""}${S.sinkron.tertunda ? " · ada perubahan yang belum terkirim" : ""}.</p>`
         : `<p class="ket" style="margin:12px 0 0">${S.sinkronMati ? "📱 Penyimpanan online dimatikan di perangkat ini; data hanya ada di perangkat ini. Nyalakan lagi di <b>Pengaturan → Kode Anak</b>." : "⏳ Kode Anak dibuat otomatis begitu perangkat ini tersambung internet. Untuk melihat kemajuan dari HP anak di sini, pilih <b>Pengaturan → Sudah punya Kode Anak?</b>."}</p>`}</div>
+    ${htmlLaporanOrtu()}
     ${htmlKesulitanOrtu()}
     ${htmlRencanaOrtu()}
     ${htmlPosTesOrtu()}
     <div class="kartu"><h3>Aktivitas terakhir</h3>${akhir ? `<ul class="daftar-aktivitas">${akhir}</ul>` : '<p class="ket" style="margin:6px 0 0">Belum ada level yang diselesaikan di perangkat ini.</p>'}</div>
     <div class="kartu"><h3>Kemajuan per misi</h3><p class="ket" style="margin:4px 0 8px"><b>Posisi</b> = level yang sedang dikerjakan (dan banyak level yang sudah lulus) · <b>Hasil</b> = persen jawaban benar dan berapa kali salah · <b>Waktu</b> = lama mengerjakan soal di misi itu (satu soal dihitung paling lama 5 menit).</p><div style="overflow-x:auto"><table class="tabel-laporan"><thead><tr><th>Misi</th><th>Posisi</th><th>⭐</th><th>Hasil</th><th>Waktu</th></tr></thead><tbody>${baris}</tbody></table></div></div>`;
-  pasangKesulitanOrtu(el);
+  pasangLaporanOrtu(el); pasangKesulitanOrtu(el);
 }
 
 /* Materi & Level Soal: susunan pulau → pos → misi → 10 level, dengan contoh soal dan uji coba */

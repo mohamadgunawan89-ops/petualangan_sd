@@ -878,3 +878,6 @@ ol.langkah > li:last-child::before { background: var(--hijau); }
 .ks-batang { height: 8px; } .ks-batang > i { background: var(--hijau); }
 .ks-batang.sedang > i { background: var(--emas); } .ks-batang.rendah > i { background: var(--merah); }
 .ks-kartu .batang-sel { width: 35%; min-width: 70px; }
+/* Laporan untuk keluarga (laporan.js) */
+.lp-teks { width: 100%; min-height: 260px; font-size: 14.5px; line-height: 1.5; font-family: inherit; resize: vertical; white-space: pre-wrap; margin-bottom: 8px; }
+.lp-tombol { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
