@@ -9,7 +9,8 @@
      karena itu tiap catatan dibatasi SALAH_ENTRI_MAKS karakter.
    - Pos Tes: benar/jumlah per pos/jurus dari 3 hasil terakhir tiap tes (rek.pos di postes.js). */
 "use strict";
-const SALAH_PER_MISI = 3, SALAH_MAKS = 30, SALAH_ENTRI_MAKS = 2500, SALAH_PER_TES = 6;
+const SALAH_PER_MISI = 10, SALAH_MAKS = 80,   // 19 Okt 2026: dari 3 per misi / 30 seluruhnya (±0,8 KB per soal → ±65 KB)
+      SALAH_ENTRI_MAKS = 2500, SALAH_PER_TES = 6;
 
 const teksPolos = h => { const d = document.createElement("template"); d.innerHTML = h; return (d.content.textContent || "").replace(/\s+/g, " ").trim(); };
 /* Isi S.salah bisa datang dari server (sinkron), jadi dibersihkan sebelum ditampilkan */

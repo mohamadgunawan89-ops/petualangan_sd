@@ -241,7 +241,7 @@ const ISI = [
     ["**❌ Soal yang terakhir dijawab salah**", "10 soal salah terbaru: soal, **jawaban anak**, kunci, dan pembahasan.", "Bandingkan jawaban anak dengan kunci untuk melihat pola salahnya, mis. selalu lupa menyederhanakan pecahan."],
   ], [1.8, 2.8, 2.2]),
   P("Ketuk satu baris misi untuk membuka soal-soal yang salah di misi itu (level yang sama ditampilkan lebih dulu). Tombol **📚 Lihat contoh soal & coba level ini** membuka misi itu di tab **Materi & Level Soal**."),
-  KOTAK("info", "Catatan data", "Akurasi per level dihitung dari riwayat level, jadi latihan sebelum fitur ini ikut terhitung. Contoh soal yang salah baru dicatat sejak **18 Oktober 2026**: paling banyak 3 soal terbaru per misi dan 30 soal seluruhnya (Pos Tes paling banyak 6 soal per tes). Soal salah dari HP anak ikut tersimpan online, jadi terlihat juga di HP orang tua."),
+  KOTAK("info", "Catatan data", "Akurasi per level dihitung dari riwayat level, jadi latihan sebelum fitur ini ikut terhitung. Contoh soal yang salah baru dicatat sejak **18 Oktober 2026**: paling banyak 10 soal terbaru per misi dan 80 soal seluruhnya (Pos Tes paling banyak 6 soal per tes). Soal salah dari HP anak ikut tersimpan online, jadi terlihat juga di HP orang tua."),
   H2("Target vs kemajuan nyata"),
   P("Kartu ini menjawab: **\"Apakah anak berjalan sesuai rencana?\"** Tombol **Lihat rencana ▶** membuka layar Rencana."),
   STAT("Gambaran kotak ringkasan (angka hanya contoh)", ["H-45", "menuju TKA"], ["41%", "siap TKA"], ["3/4", "target hari ini"], ["78%", "hari target tercapai (14 hari)"]),
