@@ -46,11 +46,12 @@ const simBelum = () => { const P = PULAU_TKA.map(pl => paketTKA(pl).filter(t => 
   for (let i = 0; i < PAKET_TKA; i++) P.forEach(x => x[i] && r.push(x[i])); return r; };
 const totalLevelTKA = () => MISI.filter(m => PULAU_TKA.includes(m.pulau)).length * 10;
 
-/* Tabungan belajar (12 Okt 2026): kelebihan dari jadwal diserahkan ke anak — dipakai untuk hari libur pilihan
-   (S.liburPilihan, mis. piknik) atau mode "percepat" (S.rencanaMode: target harian awal dipertahankan supaya materi
-   selesai lebih cepat). Bawaan "ringan": kelebihan meringankan target harian berikutnya. Keduanya ikut tersinkron. */
-const modeRencana = () => (S.rencanaMode === "percepat" ? "percepat" : "ringan");
+/* Tabungan belajar (12 Okt 2026, diubah 26 Okt 2026): semua hari bawaannya normal (sesuai rencana). Anak memilih alat
+   lalu mengetuk tanggal: 🌴 Libur → hari itu libur pilihan (S.liburPilihan); 🚀 Percepat → hari libur pilihan kembali
+   normal, hari normal jadi hari cepat (S.cepatPilihan: +1 level TKA & +1 level Bahasa Inggris). Keduanya tersinkron. */
 const liburPilihan = () => (S.liburPilihan || []).filter(t => t >= hariIni());
+const cepatPilihan = () => (S.cepatPilihan || []).filter(t => t >= hariIni());
+let alatTabungan = null;   // "libur" | "cepat" | null (bawaan: belum memilih, semua hari normal)
 /* Rentang rencana sampai tanggal paling akhir: hari TKA atau target Bahasa Inggris (program Bahasa Inggris boleh
    bertahun-tahun, sesudah TKA). Sebelum TKA materi TKA diutamakan; sesudah TKA seluruh waktu untuk Bahasa Inggris. */
 function buatRencana(dari = hariIni()) {
@@ -68,7 +69,9 @@ function buatRencana(dari = hariIni()) {
   const perHari = pakai.length ? Math.min(2, Math.ceil(sims.length / pakai.length)) : 0; let si = 0;
   pakai.forEach(h => { for (let k = 0; k < perHari && si < sims.length; k++) h.tugas.push({ jenis: "sim", tid: sims[si++].id }); if (h.tugas.length) h.jenis = "sim"; });
   const simLebih = sims.length - si;
-  hari.forEach(h => { if (h.jenis === "calon") h.jenis = "belajar"; });
+  const cepatSet = new Set(cepatPilihan());
+  hari.forEach(h => { if (h.jenis === "calon") h.jenis = "belajar"; h.cepat = h.jenis === "belajar" && cepatSet.has(h.tgl); });
+  const plus = h => (h.cepat ? 1 : 0);   // hari cepat: +1 level di atas jatah biasa
   const belajar = hari.filter(h => h.jenis === "belajar"), kapasitas = Math.max(1, Math.floor(a.menit / menitPerLevel()));
   const sisaCap = new Map(belajar.map(h => [h, kapasitas]));
   // Bahasa Inggris dulu (punya tanggal target): jatah harian = sisa pekerjaan dibagi hari latihan sampai tanggal target
@@ -80,11 +83,13 @@ function buatRencana(dari = hariIni()) {
     const E = sisaInggris(), EU = E.reduce((s, x) => s + x.biaya, 0);
     const hariE = belajar.filter(h => h.tgl <= ingT && a.ingHari.includes(h.w)), rata = hariE.length ? Math.ceil(EU / hariE.length) : EU;
     let ei = 0; const pakai = new Map();
-    const isi = (h, batasH) => { let p = pakai.get(h) || 0; while (ei < E.length && p < batasH) { tambahTugas(h, E[ei]); p += E[ei].biaya; ei++; } pakai.set(h, p); sisaCap.set(h, Math.max(0, kapasitas - p)); };
+    const ekstra = new Map();   // hari cepat: biaya 1 level Bahasa Inggris tambahan (tidak mengurangi jatah waktu TKA)
+    const isi = (h, batasH) => { let p = pakai.get(h) || 0; while (ei < E.length && p < batasH) { tambahTugas(h, E[ei]); p += E[ei].biaya; ei++; } pakai.set(h, p); sisaCap.set(h, Math.max(0, kapasitas - p + (ekstra.get(h) || 0))); };
+    const isiCepat = h => { if (!h.cepat || ekstra.has(h) || ei >= E.length) return; const b = E[ei].biaya; isi(h, (pakai.get(h) || 0) + 1); ekstra.set(h, b); sisaCap.set(h, Math.max(0, kapasitas - pakai.get(h) + b)); };
     // Laju merata sampai tanggal target: jatah kumulatif EU × (k+1)/N (bukan dibulatkan ke atas per hari)
     hariE.forEach((h, k) => { const kum = Math.ceil(EU * (k + 1) / hariE.length), sudah = E.slice(0, ei).reduce((s, x) => s + x.biaya, 0);
-      isi(h, Math.min(maksHari(h.tgl), Math.max(0, kum - sudah))); });
-    if (ei < E.length) hariE.forEach(h => isi(h, maksHari(h.tgl)));   // sisa: pakai jatah penuh hari itu
+      isi(h, Math.min(maksHari(h.tgl), Math.max(0, kum - sudah))); isiCepat(h); });
+    if (ei < E.length) hariE.forEach(h => isi(h, maksHari(h.tgl) + (ekstra.get(h) || 0)));   // sisa: pakai jatah penuh hari itu
     const akhirE = [...hariE].reverse().find(h => h.tugas.some(t => t.m && cariMisi(t.m).pulau === "big"));
     // Perkiraan selesai dengan pengaturan sekarang (dihitung terus ke depan, bisa bertahun-tahun)
     let perk = null; { let u = 0; for (let t = dari, k = 0; k < 3650 * 2; t = tambahHari(t, 1), k++) { const w = hariKe(t);
@@ -98,12 +103,11 @@ function buatRencana(dari = hariIni()) {
   const belajarTKA = tka ? belajar.filter(h => h.tgl < tka) : [];
   const Q = tka ? PULAU_TKA.map(sisaLevel) : [[], []], total = Q[0].length + Q[1].length, awalQ = Q.map(q => q.length || 1);
   const cadUlang = belajarTKA.length > 21 ? 7 : belajarTKA.length > 10 ? 3 : 0, efektif = Math.max(1, belajarTKA.length - cadUlang);
-  const perlu = Math.ceil(total / efektif), tetap = modeRencana() === "percepat" && S.rencanaAwal && S.rencanaAwal.tka === S.tka ? S.rencanaAwal.target || 0 : 0;
-  const target = Math.min(kapasitas, Math.max(perlu, tetap));   // percepat: target awal dipertahankan → materi selesai lebih cepat
+  const perlu = Math.ceil(total / efektif), target = Math.min(kapasitas, perlu);
   const ambilTKA = (h, n) => { const it = [];
     for (let k = 0; k < n && (Q[0].length || Q[1].length); k++) it.push(Q[!Q[1].length ? 0 : !Q[0].length ? 1 : (Q[0].length / awalQ[0] >= Q[1].length / awalQ[1] ? 0 : 1)].shift());
     it.sort((p, q) => (p.m === q.m ? p.L - q.L : 0)).forEach(x => tambahTugas(h, { jenis: "level", ...x })); sisaCap.set(h, sisaCap.get(h) - it.length); };
-  belajarTKA.forEach(h => ambilTKA(h, Math.min(target, sisaCap.get(h))));
+  belajarTKA.forEach(h => ambilTKA(h, Math.min(target, Math.max(0, sisaCap.get(h))) + plus(h)));
   if (Q[0].length || Q[1].length) belajarTKA.forEach(h => ambilTKA(h, sisaCap.get(h)));   // sisa: isi waktu yang masih kosong
   belajarTKA.forEach(h => { if (!h.tugas.length) h.tugas.push({ jenis: "ulang" }); });
   belajar.forEach(h => { if (!h.tugas.length) h.jenis = "bebas"; });   // sesudah TKA tanpa tugas: hari bebas
@@ -152,7 +156,7 @@ function catatHarian(r) {
 /* Tugas hari ini dibekukan sejak pertama dilihat */
 function tugasHariIni(r) {
   const h = hariIni();
-  const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), modeRencana()]);   // pengaturan berubah → susun ulang tugas hari ini
+  const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan()]);   // pengaturan berubah → susun ulang tugas hari ini
   if (!S.rencanaHari || S.rencanaHari.tgl !== h || S.rencanaHari.kunci !== kunci) {
     const d = r.hari && r.hari[0] && r.hari[0].tgl === h ? r.hari[0] : null;
     S.rencanaHari = { tgl: h, kunci, jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [] }; simpanData(false);
@@ -312,25 +316,33 @@ function garisIng(r) {
 /* ---------- Tabungan belajar: anak memilih memakai kelebihannya ---------- */
 function kartuTabungan(r, sj) {
   if (!r.tka) return "";
-  const tab = Math.max(0, sj ? sj.selisih : 0), per = Math.max(1, r.target || 1), cukup = Math.floor(tab / per), mode = modeRencana(), pilih = liburPilihan();
+  const tab = Math.max(0, sj ? sj.selisih : 0), per = Math.max(1, r.target || 1), cukup = Math.floor(tab / per), mode = alatTabungan, pilih = liburPilihan(), cepat = cepatPilihan();
   const calon = r.hari.filter(h => h.tgl < tambahHari(hariIni(), 14) && (h.jenis === "belajar" || h.piknik)).slice(0, 12);
   return `<div class="kartu rc-tabungan"><div class="rc-judul"><h2 class="rc-h2">💰 Tabungan belajar</h2><span class="rc-tab-angka ${tab ? "ada" : ""}">${tab} level</span></div>
     <p class="ket" style="margin:0 0 10px">${tab ? `Kamu sudah <b>lebih cepat ${tab} level</b> dari jadwal. Hebat! Kamu boleh memilih cara memakainya.` : "Kerjakan lebih dari target harian untuk menabung. Tabungan bisa dipakai untuk hari libur (misalnya piknik) atau untuk menyelesaikan materi lebih cepat."}</p>
     <div class="rc-mode" role="radiogroup" aria-label="Cara memakai tabungan">
-      <button type="button" role="radio" aria-checked="${mode === "ringan"}" data-mode="ringan"><b>🌴 Ringankan &amp; boleh libur</b><span>Target harian berikutnya ikut ringan, dan kamu bisa memilih hari libur.</span></button>
-      <button type="button" role="radio" aria-checked="${mode === "percepat"}" data-mode="percepat"><b>🚀 Percepat selesai</b><span>Target harian tetap ${S.rencanaAwal && S.rencanaAwal.target ? S.rencanaAwal.target + " level" : "seperti awal"}, materi selesai lebih cepat, waktu mengulang lebih banyak.</span></button></div>
-    <h3 class="rc-sub">🌴 Pilih hari libur (14 hari ke depan)</h3>
-    <div class="rc-libur-pilih">${calon.map(h => `<button type="button" data-libur="${h.tgl}" aria-pressed="${h.piknik}"><span>${HARI_SINGKAT[h.w]}</span><b>${+h.tgl.slice(8)}</b><i>${h.piknik ? "🌴" : h.jenis === "sim" ? "📝" : jumlahButir(h) || ""}</i></button>`).join("") || '<span class="ket">Tidak ada hari belajar dalam 14 hari ke depan.</span>'}</div>
-    <p class="ket" style="margin:8px 0 0">${pilih.length ? `Hari libur pilihanmu: <b>${pilih.map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${tab ? `Tabunganmu cukup untuk ±<b>${cukup} hari libur</b> tanpa menambah target hari lain.` : "Belum ada tabungan: bila tetap libur, target hari lain sedikit naik."}${pilih.length > cukup ? " ⚠️ Libur pilihanmu lebih banyak dari tabungan, jadi target beberapa hari lain sedikit naik." : ""}</p></div>`;
+      <button type="button" role="radio" aria-checked="${mode === "libur"}" data-mode="libur"><b>🌴 Ringankan &amp; boleh libur</b><span>Ketuk tanggal untuk menjadikannya hari libur. Ketuk lagi untuk membatalkan.</span></button>
+      <button type="button" role="radio" aria-checked="${mode === "cepat"}" data-mode="cepat"><b>🚀 Percepat selesai</b><span>Ketuk tanggal: hari libur kembali normal, hari normal jadi hari cepat (+1 level TKA dan +1 level Bahasa Inggris).</span></button></div>
+    <h3 class="rc-sub">📅 Pilih tanggal (14 hari ke depan)</h3>
+    <p class="ket" style="margin:0 0 8px">${mode === "libur" ? "🌴 Ketuk tanggal yang ingin kamu liburkan." : mode === "cepat" ? "🚀 Ketuk tanggal yang ingin kamu percepat, atau hari libur yang ingin kamu batalkan." : "Semua hari normal sesuai rencana. Pilih 🌴 atau 🚀 di atas, lalu ketuk tanggalnya."}</p>
+    <div class="rc-libur-pilih">${calon.map(h => `<button type="button" data-libur="${h.tgl}" class="${h.piknik ? "libur" : h.cepat ? "cepat" : ""}" aria-pressed="${h.piknik || h.cepat}"><span>${HARI_SINGKAT[h.w]}</span><b>${+h.tgl.slice(8)}</b><i>${h.piknik ? "🌴" : h.cepat ? "🚀" : h.jenis === "sim" ? "📝" : jumlahButir(h) || ""}</i></button>`).join("") || '<span class="ket">Tidak ada hari belajar dalam 14 hari ke depan.</span>'}</div>
+    <p class="ket" style="margin:8px 0 0">${pilih.length ? `🌴 Hari libur pilihanmu: <b>${pilih.map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${cepat.length ? `🚀 Hari cepat: <b>${cepat.map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${tab ? `Tabunganmu cukup untuk ±<b>${cukup} hari libur</b> tanpa menambah target hari lain.` : "Belum ada tabungan: bila tetap libur, target hari lain sedikit naik."}${pilih.length > cukup ? " ⚠️ Libur pilihanmu lebih banyak dari tabungan, jadi target beberapa hari lain sedikit naik." : ""}</p></div>`;
 }
 function pasangTabungan() {
   const k = layar.querySelector(".rc-tabungan"); if (!k) return;
   k.addEventListener("click", e => {
     const m = e.target.closest("[data-mode]"), l = e.target.closest("[data-libur]");
-    if (m) { bunyi.klik(); S.rencanaMode = m.dataset.mode; S.waktu = { ...(S.waktu || {}), rencana: Date.now() }; simpanData(); tampilPesan(m.dataset.mode === "percepat" ? "🚀 Mode percepat: target harian tetap, materi selesai lebih cepat" : "🌴 Mode ringan: target harian menyesuaikan"); lRencana(); }
-    if (l) { bunyi.klik(); const tg = l.dataset.libur, s = new Set(liburPilihan());
-      if (s.has(tg)) s.delete(tg); else s.add(tg); S.liburPilihan = [...s].sort(); S.waktu = { ...(S.waktu || {}), rencana: Date.now() }; simpanData();
-      tampilPesan(s.has(tg) ? `🌴 ${HARI_PENUH[hariKe(tg)]} ${tglIndo(tg)} jadi hari libur` : "Libur dibatalkan, kembali jadi hari belajar"); lRencana(); }
+    if (m) { bunyi.klik(); alatTabungan = alatTabungan === m.dataset.mode ? null : m.dataset.mode;
+      tampilPesan(alatTabungan === "libur" ? "🌴 Ketuk tanggal yang ingin kamu liburkan" : alatTabungan === "cepat" ? "🚀 Ketuk tanggal yang ingin kamu percepat" : "Semua hari tetap sesuai pilihanmu"); lRencana(); }
+    if (l) { bunyi.klik(); const tg = l.dataset.libur, lib = new Set(liburPilihan()), cep = new Set(cepatPilihan()), nama = `${HARI_PENUH[hariKe(tg)]} ${tglIndo(tg)}`;
+      if (!alatTabungan) { tampilPesan("Pilih dulu 🌴 Ringankan atau 🚀 Percepat di atas, lalu ketuk tanggalnya"); return; }
+      let pesan;
+      if (alatTabungan === "libur") { if (lib.has(tg)) { lib.delete(tg); pesan = `Libur dibatalkan, ${nama} kembali normal`; } else { lib.add(tg); cep.delete(tg); pesan = `🌴 ${nama} jadi hari libur`; } }
+      else if (lib.has(tg)) { lib.delete(tg); pesan = `${nama} kembali normal sesuai rencana`; }
+      else if (cep.has(tg)) { cep.delete(tg); pesan = `${nama} kembali normal sesuai rencana`; }
+      else { cep.add(tg); pesan = `🚀 ${nama} jadi hari cepat: +1 level TKA dan +1 level Bahasa Inggris`; }
+      S.liburPilihan = [...lib].sort(); S.cepatPilihan = [...cep].sort(); S.waktu = { ...(S.waktu || {}), rencana: Date.now() }; simpanData();
+      tampilPesan(pesan); lRencana(); }
   });
 }
 const tglRingkas = t => { const [y, m, d] = t.split("-").map(Number); return `${d} ${["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][m - 1]}${y !== new Date().getFullYear() ? " " + y : ""}`; };
@@ -343,7 +355,7 @@ function mingguIni(r) {
     else if (tgl === r.tka) { ikon = "🏁"; ket = "TKA"; kls = "hariH"; }
     else if (!h) { ikon = "·"; ket = ""; kls = "kosong"; }
     else { const nL = jumlahButir(h);
-      ikon = h.piknik ? "🌴" : h.jenis === "sim" ? "📝" : h.jenis === "bebas" ? "🎉" : h.jenis === "libur" ? "😴" : h.jenis === "rehat" ? "😌" : nL ? "📘" : "🔁"; ket = h.piknik ? "libur pilihan" : h.jenis === "sim" ? "simulasi" : h.jenis === "bebas" ? "bebas" : h.jenis === "libur" ? "libur" : h.jenis === "rehat" ? "rehat" : nL ? `${nL} tugas` : "ulang"; kls = h.jenis; }
+      ikon = h.piknik ? "🌴" : h.cepat ? "🚀" : h.jenis === "sim" ? "📝" : h.jenis === "bebas" ? "🎉" : h.jenis === "libur" ? "😴" : h.jenis === "rehat" ? "😌" : nL ? "📘" : "🔁"; ket = h.piknik ? "libur pilihan" : h.jenis === "sim" ? "simulasi" : h.jenis === "bebas" ? "bebas" : h.jenis === "libur" ? "libur" : h.jenis === "rehat" ? "rehat" : nL ? `${nL} tugas` : "ulang"; kls = h.jenis + (h.cepat ? " cepat" : ""); }
     return `<div class="rc-hari ${kls} ${kini ? "kini" : ""}"><span class="rc-hari-nama">${HARI_SINGKAT[i]}</span><span class="rc-hari-tgl">${+tgl.slice(8)}</span><span class="rc-hari-ikon">${ikon}</span><span class="rc-hari-ket">${ket}</span></div>`; }).join("");
 }
 /* Kalender dilipat per bulan (12 Okt 2026): bulan ini terbuka, bulan lain hanya judul & ringkasan; rincian tanggal
@@ -363,7 +375,7 @@ function kalenderRencana(r) {
       const t = `${b}-${String(d).padStart(2, "0")}`, h = peta[t];
       if (t < awal || t > akhir) { html += `<span class="rc-tg ${t < awal ? "dulu" : "luar"}">${t < awal ? d : ""}</span>`; continue; }
       const kls = t === r.tka ? "hariH" : h ? h.jenis : "luar", n = h ? jumlahButir(h) : 0;
-      html += `<button type="button" class="rc-tg ${kls} ${t === awal ? "kini" : ""} ${t === pilihTgl ? "dipilih" : ""}" data-tgl="${t}" aria-label="${tglIndo(t)}">${d}${h && h.piknik ? "<i>🌴</i>" : kls === "sim" ? "<i>📝</i>" : kls === "hariH" ? "<i>🏁</i>" : n ? `<i>${n}</i>` : ""}</button>`;
+      html += `<button type="button" class="rc-tg ${kls} ${t === awal ? "kini" : ""} ${t === pilihTgl ? "dipilih" : ""}" data-tgl="${t}" aria-label="${tglIndo(t)}">${d}${h && h.piknik ? "<i>🌴</i>" : h && h.cepat ? `<i>🚀${n || ""}</i>` : kls === "sim" ? "<i>📝</i>" : kls === "hariH" ? "<i>🏁</i>" : n ? `<i>${n}</i>` : ""}</button>`;
     }
     html += `</div><div class="rc-detail" data-detail="${b}"></div></details>`;
   }
@@ -376,7 +388,7 @@ function tampilDetail(r, tgl) {
   const h = r.hari.find(x => x.tgl === tgl);
   const isi = tgl === r.tka ? "<p>🏁 <b>Hari TKA!</b> Sarapan, datang lebih awal, baca soal pelan-pelan, dan periksa kembali jawabanmu.</p>"
     : !h ? "" : h.piknik ? "<p>🌴 <b>Libur pilihanmu.</b> Selamat bersenang-senang! Batalkan di kartu Tabungan belajar bila jadi belajar.</p>" : h.jenis === "bebas" ? "<p>🎉 Tidak ada target (sudah tercapai lebih awal).</p>" : h.jenis === "libur" ? "<p>😴 Libur belajar. Istirahat dan bermain.</p>" : h.jenis === "rehat" ? "<p>😌 Rehat sebelum TKA: tidur cukup, siapkan alat tulis, jangan belajar terlalu berat.</p>"
-      : `<ul>${h.tugas.map(t => { const x = teksTugas(t); return `<li><span>${x.ikon}</span><span><b>${x.judul}</b><small>${x.sub}</small></span></li>`; }).join("")}</ul>`;
+      : (h.cepat ? "<p>🚀 <b>Hari cepat pilihanmu:</b> +1 level TKA dan +1 level Bahasa Inggris. Batalkan di kartu Tabungan belajar.</p>" : "") + `<ul>${h.tugas.map(t => { const x = teksTugas(t); return `<li><span>${x.ikon}</span><span><b>${x.judul}</b><small>${x.sub}</small></span></li>`; }).join("")}</ul>`;
   el.innerHTML = `<div class="rc-detail-judul">${HARI_PENUH[hariKe(tgl)]}, ${tglIndo(tgl)}${tgl === hariIni() ? " · hari ini" : ""}</div>${isi}`;
 }
 
@@ -410,10 +422,10 @@ function htmlRencanaOrtu() {
       ${r.tka ? `<div><b>H-${selisihHari(hariIni(), r.tka)}</b>menuju TKA</div><div><b>${kesiapan(r)}%</b>siap TKA</div>` : ""}
       <div><b>${n ? `${sel}/${n}` : "–"}</b>target hari ini</div>${pctHari !== null ? `<div><b>${pctHari}%</b>hari target tercapai (14 hari)</div>` : ""}</div>
     ${r.tka ? `${batangBanding(`📘 Matematika &amp; Bahasa Indonesia · sejak ${tglRingkas(sj.sejak)} <span class="rc-chip-kecil ${sj.kls}">${sj.teks}</span>`, sj.harap, sj.dikerjakan, "level")}
-      <p class="ket" style="margin:4px 0 10px">Target ${r.target} level per hari belajar · materi selesai sekitar <b>${r.selesaiMateri ? tglIndo(r.selesaiMateri) : "–"}</b> · simulasi TKA tuntas ${PULAU_TKA.reduce((s, pl) => s + paketTKA(pl).filter(x => terbaikTes(x.id) >= TES_TUNTAS).length, 0)}/${PAKET_TKA * 2}${modeRencana() === "percepat" ? " · mode 🚀 percepat" : ""}.</p>` : ""}
+      <p class="ket" style="margin:4px 0 10px">Target ${r.target} level per hari belajar · materi selesai sekitar <b>${r.selesaiMateri ? tglIndo(r.selesaiMateri) : "–"}</b> · simulasi TKA tuntas ${PULAU_TKA.reduce((s, pl) => s + paketTKA(pl).filter(x => terbaikTes(x.id) >= TES_TUNTAS).length, 0)}/${PAKET_TKA * 2}${cepatPilihan().length ? ` · 🚀 ${cepatPilihan().length} hari cepat dipilih anak` : ""}.</p>` : ""}
     ${si ? `${batangBanding(`🌍 Bahasa Inggris · sejak ${tglRingkas(si.sejak)} <span class="rc-chip-kecil ${si.kls}">${si.teks}</span>`, si.harap, si.dikerjakan, "tugas")}
       <p class="ket" style="margin:4px 0 10px">Target selesai <b>${tglIndo(r.ingT)}</b> (${CAKUPAN_ING.find(c => c[0] === a.ingSampai)[1].replace("&", "&amp;")})${r.ing.sisa ? " · ⚠️ belum muat dengan waktu sekarang" : r.ing.selesai ? ` · menurut jadwal selesai ${tglIndo(r.ing.selesai)}` : ""}. Sub level Dengar &amp; Baca = 2 tugas.</p>` : ""}
     <h4 class="rc-sub">Catatan 14 hari terakhir</h4>
     <div style="overflow-x:auto"><table class="tabel-laporan rc-tabel-harian"><thead><tr><th>Hari</th><th>Target</th><th>Dikerjakan</th><th>Hasil</th></tr></thead><tbody>${baris.join("")}</tbody></table></div>
-    <p class="ket" style="margin:8px 0 0">Target dicatat saat aplikasi dibuka pada hari itu. ${liburPilihan().length ? `Libur pilihan anak berikutnya: <b>${liburPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}Waktu belajar ${a.menit} menit/hari · hari belajar ${a.hari.map(i => HARI_SINGKAT[i]).join(", ")}.</p></div>`;
+    <p class="ket" style="margin:8px 0 0">Target dicatat saat aplikasi dibuka pada hari itu. ${liburPilihan().length ? `Libur pilihan anak berikutnya: <b>${liburPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${cepatPilihan().length ? `Hari cepat (+1 level TKA &amp; B. Inggris): <b>${cepatPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}Waktu belajar ${a.menit} menit/hari · hari belajar ${a.hari.map(i => HARI_SINGKAT[i]).join(", ")}.</p></div>`;
 }

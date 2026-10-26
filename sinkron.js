@@ -53,7 +53,7 @@ function gabungKemajuan(a, b) {
   }
   // Rencana belajar (12 Okt 2026): pilihan libur & mode → yang terbaru; catatan harian → digabung per tanggal
   const ra = a.waktu?.rencana || 0, rb = b.waktu?.rencana || 0;
-  if (rb > ra) { g.liburPilihan = b.liburPilihan || []; g.rencanaMode = b.rencanaMode; }
+  if (rb > ra) { g.liburPilihan = b.liburPilihan || []; g.cepatPilihan = b.cepatPilihan || []; }
   g.waktu = { ...(g.waktu || {}), rencana: Math.max(ra, rb) };
   const ca = a.rencanaCatatan || {}, cb = b.rencanaCatatan || {};
   g.rencanaCatatan = Object.fromEntries([...new Set([...Object.keys(ca), ...Object.keys(cb)])].sort().slice(-60).map(k => {
