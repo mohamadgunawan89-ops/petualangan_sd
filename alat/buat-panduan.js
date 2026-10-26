@@ -280,7 +280,7 @@ const ISI = [
   H2("Simulasi TKA"),
   P("Tabel nilai terbaik setiap paket 1–10 untuk Matematika dan Bahasa Indonesia. **Sel hijau = tuntas (≥ 70)**, \"–\" = belum dikerjakan. Karena soal tiap paket tetap, mengerjakan ulang paket yang sama menunjukkan apakah anak sudah memahami pembahasannya."),
   H2("Aktivitas terakhir"),
-  P("Delapan level terakhir yang dimainkan sampai selesai: waktu, misi, level, lalu hasilnya, mis. **\"✅ lulus · 4/5 benar langsung · ❌ 1× salah · ⏱️ 3 mnt\"** atau **\"belum lulus\"**. Jumlah salah mencakup semua putaran, termasuk yang diulang dari nomor 1. Tantangan Harian dan tes tidak tampil di sini."),
+  P("Delapan kegiatan terakhir yang dimainkan sampai selesai: waktu, misi, level, lalu hasilnya, mis. **\"✅ lulus · 4/5 benar langsung · ❌ 1× salah · ⏱️ 3 mnt\"** atau **\"belum lulus\"**. Jumlah salah mencakup semua putaran, termasuk yang diulang dari nomor 1. Latihan Dengar & Baca Bahasa Inggris juga tampil: **🎧 Sub level N** (nilai dan tuntas atau belum), **🎤 Baca & Koreksi** (persen kata terbaca tepat), dan **🎧 Dengarkan teks** (seluruh teks sudah didengarkan). Tantangan Harian dan tes tidak tampil di sini."),
   H2("Kemajuan per misi"),
   P("Tabel semua misi, dikelompokkan per pulau."),
   TB(["Kolom", "Arti", "Cara membaca"], [

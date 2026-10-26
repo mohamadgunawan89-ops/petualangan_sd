@@ -485,7 +485,12 @@ function ortuDasbor(el) {
     : !d.lv && !d.total ? "–" : `Level ${d.lv + 1}<small>${d.lv} lulus</small>`);
   const baris = PULAU.map(p => `<tr class="kelompok"><td colspan="5">${p.ikon} ${p.judul}</td></tr>` + misiPulau(p.id).map(m => { const d = dataMisi(m.id); return `<tr><td>${m.ikon} ${m.judul}</td><td class="angka posisi">${posisi(m, d)}</td><td class="angka">${bintangMisi(m.id)}</td><td class="angka posisi">${d.total ? `${Math.round(d.benar / d.total * 100)}%<small>${d.total - d.benar}× salah</small>` : "–"}</td><td class="angka">${lamaTeks(d.detik)}</td></tr>`; }).join("")).join("");
   const jamTgl = x => { const d = new Date(x); return `${tglIndo(hariIni(d))}, ${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`; };
-  const akhir = S.log.slice(-8).reverse().map(x => { const m = cariMisi(x.m); if (!m) return ""; const hasil = x.lulus === undefined ? `${x.b} benar` : x.lulus ? `✅ lulus · ${x.b}/${x.n} benar langsung` : "belum lulus";
+  const nmSub = (x, m) => (typeof NAMA_SUB !== "undefined" && typeof lvIng === "function" && lvIng(m.id) ? NAMA_SUB[jenisIng(lvIng(m.id))][x.n] : "");
+  const barisIng = x => { const m = cariMisi(x.m); if (!m) return "";
+    const [judul, hasil] = x.j === "sub" ? [`🎧 Sub level ${x.n + 1}${nmSub(x, m) ? ` · ${nmSub(x, m)}` : ""}`, `${x.p >= ING_LULUS_SUB ? "✅ tuntas" : "belum tuntas"} · ${x.b}/${ING_SOAL_SUB} benar (${x.p}%)`]
+      : x.j === "baca" ? ["🎤 Baca &amp; Koreksi", `${x.p >= bacaMin() ? "✅" : "🟡"} ${x.p}% kata terbaca tepat`] : ["🎧 Dengarkan teks", "✅ seluruh teks didengarkan"];
+    return `<li><span class="ket">${jamTgl(x.t)}</span><span>${m.ikon} ${m.judul} · <b>${judul}</b></span><span class="ket">${hasil}</span></li>`; };
+  const akhir = [...S.log.slice(-8), ...(S.logIng || []).slice(-8).map(x => ({ ...x, ing: 1 }))].sort((p, q) => q.t - p.t).slice(0, 8).map(x => { if (x.ing) return barisIng(x); const m = cariMisi(x.m); if (!m) return ""; const hasil = x.lulus === undefined ? `${x.b} benar` : x.lulus ? `✅ lulus · ${x.b}/${x.n} benar langsung` : "belum lulus";
     const lama = (x.s !== undefined ? ` · ❌ ${x.s}× salah` : "") + (x.dt ? ` · ⏱️ ${lamaTeks(x.dt)}` : "");
     return `<li><span class="ket">${jamTgl(x.t)}</span><span>${m.ikon} ${m.judul} · <b>Level ${x.L}</b></span><span class="ket">${hasil}${lama}</span></li>`; }).join("");
   const lemah = MISI.filter(m => dataMisi(m.id).total >= 10).sort((a, b) => dataMisi(a.id).benar / dataMisi(a.id).total - dataMisi(b.id).benar / dataMisi(b.id).total).slice(0, 3);

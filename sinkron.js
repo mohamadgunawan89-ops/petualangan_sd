@@ -67,6 +67,9 @@ function gabungKemajuan(a, b) {
   const log = new Map();
   for (const x of [...(a.log || []), ...(b.log || [])]) log.set(`${x.t}|${x.m}|${x.L}`, x);
   g.log = [...log.values()].sort((p, q) => p.t - q.t).slice(-600);
+  const logIng = new Map();
+  for (const x of [...(a.logIng || []), ...(b.logIng || [])]) logIng.set(`${x.t}|${x.m}|${x.j}|${x.n}`, x);
+  g.logIng = [...logIng.values()].sort((p, q) => p.t - q.t).slice(-200);
   return g;
 }
 

@@ -36,6 +36,9 @@ const lajuEN = () => (LAJU_EN.some(x => x[0] === S.lajuEn) ? S.lajuEn : 0.75);
 const ingLihat = id => { const x = (S.ing && S.ing[id]) || {}; return { d: x.d || 0, dh: x.dh || [], b: x.b || 0, s: [0, 1, 2, 3, 4].map(i => (x.s && x.s[i]) || 0) }; };
 function dataIng(id) { const x = ((S.ing ||= {})[id] ||= {}); x.s ||= [0, 0, 0, 0, 0]; return x; }
 const bolehSimpanIng = () => S.peran !== "ortu";
+/* Riwayat latihan Dengar & Baca (26 Okt 2026) untuk "Aktivitas terakhir" di Dasbor Ortu — S.log hanya berisi level 1–10.
+   S.logIng: { t, m: idMisi, j: "sub" | "baca" | "dengar", n: sub level (0–4), p: persen, b: benar } — 200 terakhir, tersinkron. */
+function catatIng(x) { (S.logIng ||= []).push({ t: Date.now(), ...x }); if (S.logIng.length > 200) S.logIng.splice(0, S.logIng.length - 200); }
 const perluDengar = id => aturIng().dengar && bisaDengarEN() && !ingLihat(id).d;
 const perluBaca = id => aturIng().baca && bisaMikEN() && ingLihat(id).b < bacaMin();
 const subTerbuka = (id, n) => (n === 0 ? !perluDengar(id) && !perluBaca(id) : ingLihat(id).s[n - 1] >= ING_LULUS_SUB);
@@ -246,7 +249,7 @@ function tandaiDengar(i) {
   if (!bolehSimpanIng()) return;
   const x = dataIng(LB.id); if (x.d) return;
   x.dh = [...new Set([...(x.dh || []), i])];
-  if (x.dh.length >= LB.unit.length) { x.d = 1; delete x.dh; simpanData(); tampilPesan("🎧 Seluruh teks sudah kamu dengarkan!"); }
+  if (x.dh.length >= LB.unit.length) { x.d = 1; delete x.dh; catatIng({ m: LB.id, j: "dengar" }); simpanData(); tampilPesan("🎧 Seluruh teks sudah kamu dengarkan!"); }
   else simpanData(false);
   pasangTangga(LB.id);
 }
@@ -295,7 +298,7 @@ function akhiriBaca() {
   const persen = dibaca.length ? Math.round(dibaca.reduce((a, v) => a + v, 0) / dibaca.length) : 0, lengkap = dibaca.length > 0 && sisa <= Math.max(2, Math.round(total * 0.05));
   const tepat = dibaca.filter(v => v >= 85).length, x = ingLihat(LB.id);
   let baru = false;
-  if (lengkap && persen > x.b && bolehSimpanIng()) { dataIng(LB.id).b = persen; baru = true; simpanData(); }
+  if (lengkap && bolehSimpanIng()) { catatIng({ m: LB.id, j: "baca", p: persen }); if (persen > x.b) { dataIng(LB.id).b = persen; baru = true; } simpanData(); }
   const pujian = persen >= 95 ? "Excellent! 🎉" : persen >= 85 ? "Great job! 👍" : persen >= 60 ? "Good, keep practicing!" : "Keep trying, you can do it!";
   const lemah = [...new Map(LB.kata.map((k, i) => [k.tk.join(" "), { k, v: perKata[i] }]).filter(([kk, o]) => kk && o.v != null && o.v < 85)).values()].sort((a, b) => a.v - b.v).slice(0, 8);
   layar.querySelector("#lt-hasil").innerHTML = !dibaca.length ? `<div class="umpan salah"><h3>Belum terdengar</h3><div>Aplikasi belum menangkap bacaanmu. Dekatkan HP, baca lebih keras, lalu coba lagi.</div></div>`
@@ -458,7 +461,7 @@ function lanjutLatih() { if (!LT) return; if (LT.mode === "hitung") LT.i++; soal
 function hasilSub() {
   const { id, n, benar, coba } = LT, persen = Math.round(benar * 100 / ING_SOAL_SUB), lulus = persen >= ING_LULUS_SUB, nama = NAMA_SUB[jenisIng(LT.lv)];
   const lama = ingLihat(id).s[n], pertama = lulus && lama < ING_LULUS_SUB, terbaik = persen > lama; let koin = 0;
-  if (!coba) { const x = dataIng(id); if (terbaik) x.s[n] = persen; koin = benar * 5 + (pertama ? 30 : 0); S.koin += koin; catatApi(); simpanData(); }
+  if (!coba) { const x = dataIng(id); if (terbaik) x.s[n] = persen; catatIng({ m: id, j: "sub", n, p: persen, b: benar }); koin = benar * 5 + (pertama ? 30 : 0); S.koin += koin; catatApi(); simpanData(); }
   const tuntas = !coba && latihTuntas(id), m = cariMisi(id);
   LT = null; layarKini = "hasil"; kepala.hidden = true; pasangNav(null);
   layar.innerHTML = `<div class="kartu hasil"><div class="lt-label-hasil">${m.ikon} ${m.judul} · Sub level ${n + 1} · ${nama[n]}</div>
