@@ -398,7 +398,7 @@ function tampilSoalLatih() {
   layar.innerHTML = `<div class="main-atas"><button class="tutup" id="lt-keluar" aria-label="Keluar">✕</button><div class="info"><b>${m.ikon} ${m.judul}</b><span class="lencana k2">Sub level ${LT.n + 1} · ${IKON_SUB[LT.n]} ${nama}</span></div>${LT.coba ? '<span class="chip" style="background:var(--ungu-muda);color:var(--ungu)">🧪 Uji coba</span>' : ""}</div>
     <div class="lt-jalur" aria-hidden="true"><i style="width:${persen}%"></i></div>
     <div class="lt-hitung">${LT.mode === "hitung" ? `Soal ${LT.i + 1} dari ${ING_SOAL_SUB}` : "🔁 Ulangi dengan soal lain (tidak menambah nilai)"}<span>benar langsung: ${LT.benar}</span></div>
-    <div class="kartu kartu-soal">${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>
+    <div class="kartu kartu-soal">${s.bacaan ? `<div class="bacaan">${s.bacaan}</div>` : ""}${tombolSuara(s)}<div class="teks-soal">${s.teks}</div>${s.gambar ? `<div class="wadah-gambar">${s.gambar}</div>` : ""}
       <div id="lt-jawab">${areaLatih(s)}</div><div id="lt-umpan"></div><div class="aksi-soal" id="lt-aksi">${s.bentuk === "pg" ? "" : `<button class="tbl tbl-hijau tbl-periksa" id="lt-periksa">Periksa ✔</button>`}</div></div>`;
   layar.querySelector("#lt-keluar").addEventListener("click", () => dialog(`<div style="font-size:54px">🦉</div><h2>Mau berhenti?</h2><p class="ket">Nilai sub level ini belum disimpan.</p>`,
     [["Lanjut berlatih", "tbl-hijau", null], ["Keluar", "tbl-putih", () => { const id = LT.id; LT = null; tampil("latih", id); }]]));
