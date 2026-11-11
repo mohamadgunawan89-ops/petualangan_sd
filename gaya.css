@@ -882,3 +882,14 @@ ol.langkah > li:last-child::before { background: var(--hijau); }
 /* Laporan untuk keluarga (laporan.js) */
 .lp-teks { width: 100%; min-height: 260px; font-size: 14.5px; line-height: 1.5; font-family: inherit; resize: vertical; white-space: pre-wrap; margin-bottom: 8px; }
 .lp-tombol { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* Jadwal tes & Sesi tambahan (11 Nov 2026) */
+.lapis .kotak.kotak-panjang { max-height: 88vh; overflow-y: auto; text-align: left; max-width: 560px; }
+.remedi-daftar .ks-soal { margin: 10px 0; }
+.tes-beranda { display: grid; gap: 10px; border-left: 6px solid #8b5cf6; }
+.tes-beranda .tb-baris { display: flex; gap: 12px; align-items: center; }
+.tes-beranda .tb-ikon { font-size: 30px; flex: none; }
+.tes-beranda .tb-isi { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.tes-beranda .tb-remedi .tb-ikon { font-size: 24px; }
+.pilih-tes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.kotak-remedi { background: #fff7e6; border-radius: 12px; padding: 10px 12px; text-align: left; }

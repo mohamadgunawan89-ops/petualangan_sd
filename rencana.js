@@ -42,7 +42,7 @@ const hariKe = tgl => (new Date(tgl + "T00:00:00").getDay() + 6) % 7;
 const tambahHari = (tgl, n) => { const d = new Date(tgl + "T00:00:00"); d.setDate(d.getDate() + n); return hariIni(d); };
 const menitPerLevel = () => Math.max(4, Math.round(atur().soal * 1.3));
 const sisaLevel = pl => MISI.filter(m => m.pulau === pl).flatMap(m => { const lv = dataMisi(m.id).lv; return Array.from({ length: 10 - lv }, (_, i) => ({ m: m.id, L: lv + 1 + i })); });
-const simBelum = () => { const P = PULAU_TKA.map(pl => paketTKA(pl).filter(t => terbaikTes(t.id) < TES_TUNTAS)), r = [];
+const simBelum = () => { const P = PULAU_TKA.map(pl => paketTKA(pl).filter(t => terbaikTes(t.id) < BATAS_TES)), r = [];
   for (let i = 0; i < PAKET_TKA; i++) P.forEach(x => x[i] && r.push(x[i])); return r; };
 const totalLevelTKA = () => MISI.filter(m => PULAU_TKA.includes(m.pulau)).length * 10;
 
@@ -52,6 +52,75 @@ const totalLevelTKA = () => MISI.filter(m => PULAU_TKA.includes(m.pulau)).length
 const liburPilihan = () => (S.liburPilihan || []).filter(t => t >= hariIni());
 const cepatPilihan = () => (S.cepatPilihan || []).filter(t => t >= hariIni());
 let alatTabungan = null;   // "libur" | "cepat" | null (bawaan: belum memilih, semua hari normal)
+
+/* ---------- Jadwal tes: Pos Tes & Simulasi TKA (11 Nov 2026) ----------
+   - Satu tes (30 soal · 75 menit) per hari; hari tes tanpa latihan lain.
+   - Tiap pekan satu hari tes di akhir pekan: Sabtu atau Minggu pilihan anak (S.hariTes[senin] = { w: 5|6, t }, bawaan
+     Sabtu). Bila hari itu libur pilihan, dipakai hari akhir pekan yang lain. Tes yang tidak muat di akhir pekan memakai
+     "hari tes tambahan" dari Pengaturan (S.atur.hariSimulasi).
+   - Pos Tes: begitu terbuka, di hari tes paling awal (akhir pekan didahulukan). Simulasi: hari tes terakhir menjelang
+     H-1 TKA, berurutan dari paket 1.
+   - Nilai di bawah BATAS_TES: tes diulang (simulasi: paket yang sama) paling cepat 7 hari sesudah percobaan terakhir.
+     Sampai tes ulang, tiap hari belajar ada Sesi tambahan (bahas soal yang salah + 1 level ulang dari materi terlemah
+     di tes itu) dan latihan harian berkurang 1 level. */
+const BATAS_TES = 80;
+const seninDari = tgl => tambahHari(tgl, -hariKe(tgl));
+const hariTesPekan = tgl => { const x = (S.hariTes || {})[seninDari(tgl)]; return x && (x.w === 5 || x.w === 6) ? x.w : 5; };
+const tglCoba = x => hariIni(new Date(x.t));
+const cobaTerakhir = id => riwayatTes(id).reduce((p, x) => (!p || x.t > p.t ? x : p), null);
+const tesRelevan = (t, tka, ingT) => (PULAU_TKA.includes(t.pulau) ? !!tka : t.pulau === "big" && !!ingT && !t.tka);
+function aturTes(hari, dari, tka, ingT) {
+  const beku = S.rencanaHari && S.rencanaHari.tgl === dari ? S.rencanaHari.tugas : null;   // tugas hari ini yang sudah dibekukan
+  const bekuTes = beku ? beku.filter(t => t.jenis === "sim").map(t => t.tid) : [];
+  const boleh = h => !h.piknik && h.jenis !== "rehat" && h.jenis !== "hariH" && !(beku && h.tgl === dari);
+  const peta = new Map(hari.map(h => [h.tgl, h])), isi = new Map();
+  const pasang = (h, t) => { isi.set(h, t.id); h.jenis = "sim"; h.posTes = !t.tka; h.cepat = false; h.tesPekan = !!h.akhirPekan; h.tugas = [{ jenis: "sim", tid: t.id }]; };
+  if (bekuTes.length && hari[0] && hari[0].tgl === dari) pasang(hari[0], cariTes(bekuTes[0]));
+  // Slot akhir pekan (satu per pekan) dan slot tambahan (hari simulasi dari Pengaturan)
+  const pekan = [], tambahan = [];
+  for (const h of hari) if (h.w === 5 || h.w === 6) {
+    const pilih = hariTesPekan(h.tgl); if (h.w !== pilih) continue;
+    const lain = peta.get(tambahHari(h.tgl, pilih === 5 ? 1 : -1)), p = boleh(h) ? h : lain && boleh(lain) ? lain : null;
+    if (p) { p.akhirPekan = true; pekan.push(p); }
+  }
+  for (const h of hari) if (h.jenis === "calon" && !h.akhirPekan && boleh(h)) tambahan.push(h);
+  const sah = (h, t) => !isi.has(h) && (PULAU_TKA.includes(t.pulau) ? h.tgl < tka : h.tgl <= ingT);
+  const paling = t => { const c = cobaTerakhir(t.id); return c ? tambahHari(tglCoba(c), 7) : dari; };
+  const perlu = t => !(bekuTes.includes(t.id) && !riwayatTes(t.id).some(x => tglCoba(x) === dari));   // sudah di hari ini & belum dikerjakan
+  // Pos Tes: secepatnya
+  let posLebih = 0;
+  POS_TES.filter(t => !t.tka && tesRelevan(t, tka, ingT) && tesTerbuka(t) && terbaikTes(t.id) < BATAS_TES && perlu(t)).forEach(t => {
+    const m = paling(t), h = pekan.find(x => x.tgl >= m && sah(x, t)) || tambahan.find(x => x.tgl >= m && sah(x, t));
+    if (h) pasang(h, t); else posLebih++; });
+  // Simulasi: slot terakhir menjelang TKA, paket berurutan; paket yang diulang menunggu 7 hari
+  const sims = tka ? simBelum().filter(perlu) : [], slot = [...pekan, ...tambahan].filter(h => sah(h, sims[0] || { pulau: "mtk" })).sort((p, q) => (p.tgl < q.tgl ? -1 : 1));
+  const antre = [...sims]; slot.slice(-sims.length || slot.length).forEach(h => { if (!sims.length) return; const k = antre.findIndex(t => paling(t) <= h.tgl); if (k >= 0) pasang(h, antre.splice(k, 1)[0]); });
+  return { sims: sims.length, simLebih: antre.length, posLebih };
+}
+/* Sesi tambahan: tes yang nilai terakhirnya di bawah BATAS_TES dan belum pernah mencapainya */
+function remediAktif(hari, tka, ingT) {
+  return POS_TES.filter(t => tesRelevan(t, tka, ingT)).map(t => { const c = cobaTerakhir(t.id);
+    if (!c || c.nilai >= BATAS_TES || terbaikTes(t.id) >= BATAS_TES) return null;
+    const ulang = hari && hari.find(h => h.tgl > tglCoba(c) && h.tugas.some(x => x.jenis === "sim" && x.tid === t.id));
+    return { t, c, mulai: tambahHari(tglCoba(c), 1), sampai: ulang ? ulang.tgl : tambahHari(tglCoba(c), 7) }; }).filter(Boolean);
+}
+/* Materi terlemah di tes itu: pos/jurus dengan persentase benar terendah (di bawah 80%, paling sedikit satu), misi yang sudah dimulai */
+function misiRemedi(c, k) {
+  const pos = Object.entries(c.pos || {}).map(([pid, [b, n]]) => [pid, n ? b / n : 1]).sort((p, q) => p[1] - q[1]);
+  const lemah = pos.filter(p => p[1] < 0.8); if (!lemah.length && pos.length) lemah.push(pos[0]);
+  const ms = lemah.flatMap(([pid]) => MISI.filter(m => m.pos === pid && dataMisi(m.id).lv >= 1));
+  if (!ms.length) return null;
+  const m = ms[k % ms.length], lv = dataMisi(m.id).lv, atas = Math.min(lv, 9);
+  return { m: m.id, L: lv >= 7 ? 7 + Math.floor(k / ms.length) % (atas - 6) : lv };
+}
+function aturRemedi(hari, dari, tka, ingT) {
+  const beku = S.rencanaHari && S.rencanaHari.tgl === dari;
+  const R = remediAktif(hari, tka, ingT); if (!R.length) return;
+  hari.forEach(h => { if (h.jenis !== "belajar" || (beku && h.tgl === dari)) return;
+    const c = R.filter(x => h.tgl >= x.mulai && h.tgl < x.sampai); if (!c.length) return;
+    const x = c[selisihHari(dari, h.tgl) % c.length], k = selisihHari(x.mulai, h.tgl), mr = misiRemedi(x.c, k);
+    h.remedi = true; h.tugas.unshift({ jenis: "remedi", tid: x.t.id, ct: x.c.t, ...(mr || {}) }); });
+}
 /* Rentang rencana sampai tanggal paling akhir: hari TKA atau target Bahasa Inggris (program Bahasa Inggris boleh
    bertahun-tahun, sesudah TKA). Sebelum TKA materi TKA diutamakan; sesudah TKA seluruh waktu untuk Bahasa Inggris. */
 function buatRencana(dari = hariIni()) {
@@ -63,30 +132,13 @@ function buatRencana(dari = hariIni()) {
       : a.hari.includes(w) ? "belajar" : "libur";
     const piknik = liburPilihan().includes(tgl) && (jenis === "belajar" || jenis === "calon");
     hari.push({ tgl, w, jenis: piknik ? "libur" : jenis, piknik, tugas: [] }); }
-  // Simulasi: paket yang belum tuntas ditaruh di hari simulasi terakhir sebelum H-1, berurutan dari paket 1
-  const sims = tka ? simBelum() : [], calon = hari.filter(h => h.jenis === "calon");
-  let pakai = calon.slice(-sims.length); if (sims.length > calon.length) pakai = calon;
-  const perHari = pakai.length ? Math.min(2, Math.ceil(sims.length / pakai.length)) : 0; let si = 0;
-  pakai.forEach(h => { for (let k = 0; k < perHari && si < sims.length; k++) h.tugas.push({ jenis: "sim", tid: sims[si++].id }); if (h.tugas.length) h.jenis = "sim"; });
-  const simLebih = sims.length - si;
   const cepatSet = new Set(cepatPilihan());
+  const tes = aturTes(hari, dari, tka, ingT);
   hari.forEach(h => { if (h.jenis === "calon") h.jenis = "belajar"; h.cepat = h.jenis === "belajar" && cepatSet.has(h.tgl); });
-  /* Pos Tes (11 Nov 2026): Pos Tes yang sudah terbuka tetapi belum tuntas dijadwalkan di hari belajar berikutnya, satu per hari.
-     Pos Tes 30 soal · 75 menit, jadi hari itu hanya Pos Tes (seperti hari simulasi). Bila sudah dicoba tetapi belum tuntas,
-     dijadwalkan lagi 7 hari sesudah percobaan terakhir (waktu untuk mengulang materi). Matematika & B. Indonesia hanya
-     sebelum TKA; Bahasa Inggris hanya bila ada target selesai. Tugas hari ini yang sudah dibekukan tidak diubah. */
-  const beku = S.rencanaHari && S.rencanaHari.tgl === dari ? S.rencanaHari.tugas : null;
-  const posAntre = POS_TES.filter(t => !t.tka && tesTerbuka(t) && terbaikTes(t.id) < TES_TUNTAS && (PULAU_TKA.includes(t.pulau) ? !!tka : t.pulau === "big" && !!ingT));
-  let posLebih = 0;
-  posAntre.forEach(t => {
-    const akhirCoba = riwayatTes(t.id).reduce((m, x) => Math.max(m, x.t), 0), coba = akhirCoba ? tambahHari(hariIni(new Date(akhirCoba)), 7) : "";
-    const diBeku = beku && beku.some(x => x.tid === t.id), mulai = [diBeku ? dari : beku ? tambahHari(dari, 1) : dari, coba].sort().pop();
-    const h = hari.find(x => x.jenis === "belajar" && !x.posTes && x.tgl >= mulai && (diBeku || x.tgl !== dari || !beku) && (PULAU_TKA.includes(t.pulau) ? x.tgl < tka : x.tgl <= ingT));
-    if (h) { h.jenis = "sim"; h.posTes = true; h.cepat = false; h.tugas.push({ jenis: "sim", tid: t.id }); } else posLebih++;
-  });
+  aturRemedi(hari, dari, tka, ingT);
   const plus = h => (h.cepat ? 1 : 0);   // hari cepat: +1 level di atas jatah biasa
   const belajar = hari.filter(h => h.jenis === "belajar"), kapasitas = Math.max(1, Math.floor(a.menit / menitPerLevel()));
-  const sisaCap = new Map(belajar.map(h => [h, kapasitas]));
+  const kapH = h => Math.max(0, kapasitas - (h.remedi ? 1 : 0)), sisaCap = new Map(belajar.map(h => [h, kapH(h)]));
   // Bahasa Inggris dulu (punya tanggal target): jatah harian = sisa pekerjaan dibagi hari latihan sampai tanggal target
   let ing = null;
   const adaTKA = !!tka && PULAU_TKA.some(pl => sisaLevel(pl).length);
@@ -97,12 +149,12 @@ function buatRencana(dari = hariIni()) {
     const hariE = belajar.filter(h => h.tgl <= ingT && a.ingHari.includes(h.w)), rata = hariE.length ? Math.ceil(EU / hariE.length) : EU;
     let ei = 0; const pakai = new Map();
     const ekstra = new Map();   // hari cepat: biaya 1 level Bahasa Inggris tambahan (tidak mengurangi jatah waktu TKA)
-    const isi = (h, batasH) => { let p = pakai.get(h) || 0; while (ei < E.length && p < batasH) { tambahTugas(h, E[ei]); p += E[ei].biaya; ei++; } pakai.set(h, p); sisaCap.set(h, Math.max(0, kapasitas - p + (ekstra.get(h) || 0))); };
-    const isiCepat = h => { if (!h.cepat || ekstra.has(h) || ei >= E.length) return; const b = E[ei].biaya; isi(h, (pakai.get(h) || 0) + 1); ekstra.set(h, b); sisaCap.set(h, Math.max(0, kapasitas - pakai.get(h) + b)); };
+    const isi = (h, batasH) => { let p = pakai.get(h) || 0; while (ei < E.length && p < batasH) { tambahTugas(h, E[ei]); p += E[ei].biaya; ei++; } pakai.set(h, p); sisaCap.set(h, Math.max(0, kapH(h) - p + (ekstra.get(h) || 0))); };
+    const isiCepat = h => { if (!h.cepat || ekstra.has(h) || ei >= E.length) return; const b = E[ei].biaya; isi(h, (pakai.get(h) || 0) + 1); ekstra.set(h, b); sisaCap.set(h, Math.max(0, kapH(h) - pakai.get(h) + b)); };
     // Laju merata sampai tanggal target: jatah kumulatif EU × (k+1)/N (bukan dibulatkan ke atas per hari)
     hariE.forEach((h, k) => { const kum = Math.ceil(EU * (k + 1) / hariE.length), sudah = E.slice(0, ei).reduce((s, x) => s + x.biaya, 0);
-      isi(h, Math.min(maksHari(h.tgl), Math.max(0, kum - sudah))); isiCepat(h); });
-    if (ei < E.length) hariE.forEach(h => isi(h, maksHari(h.tgl) + (ekstra.get(h) || 0)));   // sisa: pakai jatah penuh hari itu
+      isi(h, Math.min(maksHari(h.tgl), kapH(h), Math.max(0, kum - sudah))); isiCepat(h); });
+    if (ei < E.length) hariE.forEach(h => isi(h, Math.min(maksHari(h.tgl), kapH(h)) + (ekstra.get(h) || 0)));   // sisa: pakai jatah penuh hari itu
     const akhirE = [...hariE].reverse().find(h => h.tugas.some(t => t.m && cariMisi(t.m).pulau === "big"));
     // Perkiraan selesai dengan pengaturan sekarang (dihitung terus ke depan, bisa bertahun-tahun)
     let perk = null; { let u = 0; for (let t = dari, k = 0; k < 3650 * 2; t = tambahHari(t, 1), k++) { const w = hariKe(t);
@@ -126,9 +178,9 @@ function buatRencana(dari = hariIni()) {
   belajar.forEach(h => { if (!h.tugas.length) h.jenis = "bebas"; });   // sesudah TKA tanpa tugas: hari bebas
   const sisaTakTerbagi = Q[0].length + Q[1].length;
   const selesaiMateri = [...belajarTKA].reverse().find(h => h.tugas.some(t => t.jenis === "level" && PULAU_TKA.includes(cariMisi(t.m).pulau)));
-  return { status: "ok", tka, ingT, akhir: tambahHari(ujung, -1), hari, total, target, kapasitas, perlu, simLebih, sisaTakTerbagi, menit: a.menit, selesaiMateri: selesaiMateri && selesaiMateri.tgl,
-    awalSim: (hari.find(h => h.jenis === "sim" && !h.posTes) || {}).tgl, sims: sims.length, ing,
-    posTes: hari.filter(h => h.posTes).map(h => ({ tgl: h.tgl, tid: h.tugas[0].tid })), posLebih };
+  return { status: "ok", tka, ingT, akhir: tambahHari(ujung, -1), hari, total, target, kapasitas, perlu, simLebih: tes.simLebih, sisaTakTerbagi, menit: a.menit, selesaiMateri: selesaiMateri && selesaiMateri.tgl,
+    awalSim: (hari.find(h => h.jenis === "sim" && !h.posTes) || {}).tgl, sims: tes.sims, ing,
+    posTes: hari.filter(h => h.posTes).map(h => ({ tgl: h.tgl, tid: h.tugas[0].tid })), posLebih: tes.posLebih };
 }
 
 /* Titik awal rencana (untuk status "sesuai jadwal") — dibuat ulang bila tanggal TKA berubah */
@@ -175,7 +227,7 @@ function catatHarian(r) {
 /* Tugas hari ini dibekukan sejak pertama dilihat */
 function tugasHariIni(r) {
   const h = hariIni();
-  const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan()]);   // pengaturan berubah → susun ulang tugas hari ini
+  const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan(), S.hariTes || {}]);   // pengaturan berubah → susun ulang tugas hari ini
   if (!S.rencanaHari || S.rencanaHari.tgl !== h || S.rencanaHari.kunci !== kunci) {
     const d = r.hari && r.hari[0] && r.hari[0].tgl === h ? r.hari[0] : null;
     S.rencanaHari = { tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [],
@@ -202,14 +254,17 @@ function statusTugas(t) {
   if (t.jenis === "level") { const lv = dataMisi(t.m).lv, n = t.sampai - t.dari + 1, sel = Math.max(0, Math.min(n, lv - t.dari + 1)); return { n, sel, beres: sel >= n }; }
   if (t.jenis === "sub") { const s = ingLihat(t.m).s, n = t.sampai - t.dari + 1; let sel = 0; for (let i = t.dari; i <= t.sampai; i++) if (s[i] >= ING_LULUS_SUB) sel++;
     return { n, sel, beres: sel >= n || dataMisi(t.m).lv > 0 }; }
-  if (t.jenis === "sim") { const hari = riwayatTes(t.tid).some(x => hariIni(new Date(x.t)) === hariIni()) || terbaikTes(t.tid) >= TES_TUNTAS; return { n: 1, sel: hari ? 1 : 0, beres: hari }; }
+  if (t.jenis === "sim") { const hari = riwayatTes(t.tid).some(x => hariIni(new Date(x.t)) === hariIni()) || terbaikTes(t.tid) >= BATAS_TES; return { n: 1, sel: hari ? 1 : 0, beres: hari }; }
+  if (t.jenis === "remedi") { const ok = t.m ? logHari(hariIni()).some(x => x.m === t.m && x.L === t.L && x.lulus) : !!(S.rencanaHari && S.rencanaHari.remediBaca === hariIni()); return { n: 1, sel: ok ? 1 : 0, beres: ok }; }
   const ada = logHari(hariIni()).length > 0 || (S.harian.tgl === hariIni() && S.harian.selesai); return { n: 1, sel: ada ? 1 : 0, beres: ada };
 }
 function teksTugas(t) {
   if (t.jenis === "level") { const m = cariMisi(t.m); return { ikon: m.ikon, judul: m.judul, sub: `${cariPulau(m.pulau).judul} · Level ${t.dari}${t.sampai > t.dari ? `–${t.sampai}` : ""}` }; }
   if (t.jenis === "sub") { const m = cariMisi(t.m), nm = NAMA_SUB[jenisIng(lvIng(t.m))];
     return { ikon: m.ikon, judul: m.judul, sub: `Bahasa Inggris · Dengar &amp; Baca · sub level ${t.dari + 1}${t.sampai > t.dari ? `–${t.sampai + 1}` : ` (${nm[t.dari]})`}` }; }
-  if (t.jenis === "sim") { const s = cariTes(t.tid); return { ikon: "🎯", judul: judulTes(s), sub: `${cariPulau(s.pulau).judul} · ${TES_SOAL} soal · ${TES_MENIT} menit` }; }
+  if (t.jenis === "sim") { const s = cariTes(t.tid); return { ikon: s.tka ? "🎯" : "📝", judul: judulTes(s), sub: `${cariPulau(s.pulau).judul} · ${TES_SOAL} soal · ${TES_MENIT} menit${riwayatTes(t.tid).length ? " · tes ulang" : ""}` }; }
+  if (t.jenis === "remedi") { const s = cariTes(t.tid), m = t.m && cariMisi(t.m);
+    return { ikon: "🔧", judul: `Sesi tambahan · ${judulTes(s)} ${cariPulau(s.pulau).judul}`, sub: `Bahas soal yang salah${m ? ` + ${m.judul} Level ${t.L}` : ""}` }; }
   return { ikon: "🔁", judul: "Ulangi materi yang masih lemah", sub: "Kerjakan ulang level dengan bintang sedikit, atau Tantangan Harian" };
 }
 function mulaiTugas(t) {
@@ -218,8 +273,68 @@ function mulaiTugas(t) {
   if (t.jenis === "level") { const lv = dataMisi(t.m).lv; if (level1Terkunci(t.m)) return tampil("latih", t.m);
     return lv + 1 <= 10 ? mulaiLevel(t.m, Math.max(t.dari, lv + 1)) : tampil("jalur", t.m); }
   if (t.jenis === "sim") return tampil("postes", t.tid);
+  if (t.jenis === "remedi") return bukaRemedi(t);
   const lemah = MISI.filter(m => PULAU_TKA.includes(m.pulau) && dataMisi(m.id).total >= 5).sort((a, b) => dataMisi(a.id).benar / dataMisi(a.id).total - dataMisi(b.id).benar / dataMisi(b.id).total)[0];
   return lemah ? tampil("jalur", lemah.id) : mulaiHarian();
+}
+/* ---------- Sesi tambahan & pengingat tes (11 Nov 2026) ---------- */
+const soalSalahTes = ct => (S.salah || []).filter(e => e.sb === "tes" && e.t >= ct && e.t < ct + TES_SOAL);
+const tesBerikut = (r, n = 4) => (r.status === "ok" ? r.hari.filter(h => h.jenis === "sim" && h.tugas[0] && h.tugas[0].tid) : []).slice(0, n).map(h => ({ h, t: cariTes(h.tugas[0].tid) }));
+const namaTes = t => `${judulTes(t)} ${cariPulau(t.pulau).judul}`;
+const kapanTeks = tgl => { const d = selisihHari(hariIni(), tgl); return d === 0 ? "hari ini" : d === 1 ? "besok" : `${d} hari lagi`; };
+function bukaRemedi(t) {
+  const s = cariTes(t.tid), c = riwayatTes(t.tid).find(x => x.t === t.ct) || cobaTerakhir(t.tid), daftar = soalSalahTes(t.ct), m = t.m && cariMisi(t.m);
+  const r = buatRencana(), ulang = r.status === "ok" && r.hari.find(h => h.jenis === "sim" && h.tugas.some(x => x.tid === t.tid));
+  const lemah = Object.entries(c.pos || {}).sort((p, q) => p[1][0] / p[1][1] - q[1][0] / q[1][1]).filter(([, [b, n]]) => b / n < 0.8).map(([pid]) => namaPosTes(pid));
+  const l = dialog(`<div style="font-size:44px;text-align:center">🔧</div><h2 style="text-align:center">Sesi tambahan</h2>
+    <p class="ket">${namaTes(s)}: nilaimu <b>${c.nilai}</b>, belum ${BATAS_TES}. ${lemah.length ? `Materi yang perlu dikuatkan: <b>${lemah.join(", ")}</b>. ` : ""}Pelajari lagi soal yang salah beserta pembahasannya${m ? `, lalu kerjakan <b>${m.judul} Level ${t.L}</b>` : ""}.${ulang ? ` Tes ulang: <b>${HARI_PENUH[hariKe(ulang.tgl)]}, ${tglIndo(ulang.tgl)}</b>.` : ""}</p>
+    <div class="remedi-daftar">${daftar.length ? daftar.map(htmlSoalSalah).join("") : '<p class="ket">Contoh soal yang salah tidak tersimpan untuk tes ini. Buka lagi materi pada misi di atas, lalu kerjakan levelnya.</p>'}</div>`,
+    [[m ? `Kerjakan ${m.judul} Level ${t.L} ▶` : "Sudah kupelajari ✓", "tbl-utama", () => { if (S.rencanaHari) { S.rencanaHari.remediBaca = hariIni(); simpanData(); }
+      if (m) mulaiLevel(t.m, t.L); else tampil(layarKini === "rencana" ? "rencana" : "beranda"); }], ["Nanti", "tbl-putih", null]]);
+  l.querySelector(".kotak").classList.add("kotak-panjang");
+}
+/* Pilihan Sabtu/Minggu untuk tes pekan itu (hanya hari yang belum lewat dan bukan libur pilihan) */
+function pilihHariTesHtml(h) {
+  if (!h.akhirPekan) return "";
+  const sen = seninDari(h.tgl), opsi = [5, 6].map(w => [w, tambahHari(sen, w)]).filter(([, tg]) => tg >= hariIni() && !liburPilihan().includes(tg));
+  if (opsi.length < 2) return "";
+  return `<span class="pilih-hari pilih-tes" role="group" aria-label="Pilih hari tes">${opsi.map(([w, tg]) => `<button type="button" data-hari-tes="${sen}|${w}" aria-pressed="${h.w === w}">${HARI_PENUH[w]} ${+tg.slice(8)}</button>`).join("")}</span>`;
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-hari-tes]"); if (!b) return;
+  const [sen, w] = b.dataset.hariTes.split("|"); bunyi.klik();
+  S.hariTes = Object.fromEntries(Object.entries({ ...(S.hariTes || {}), [sen]: { w: +w, t: Date.now() } }).filter(([k]) => k >= seninDari(tambahHari(hariIni(), -14))));
+  simpanData(); tampilPesan(`📝 Tes pekan ini hari ${HARI_PENUH[+w]}`); const y = window.scrollY; tampil(layarKini, argKini); window.scrollTo(0, y); });
+/* Kartu beranda: tes dalam 7 hari ke depan + Sesi tambahan yang sedang berjalan (diingatkan setiap kali beranda dibuka) */
+function kartuTesBeranda() {
+  if (S.peran === "ortu") return "";
+  const r = buatRencana(); if (r.status !== "ok") return "";
+  const x = tesBerikut(r, 1)[0], R = remediAktif(r.hari, r.tka, r.ingT);
+  const dekat = x && selisihHari(hariIni(), x.h.tgl) <= 7;
+  if (!dekat && !R.length) return "";
+  return `<div class="kartu tes-beranda">${dekat ? `<div class="tb-baris"><span class="tb-ikon">${x.t.tka ? "🎯" : "📝"}</span><span class="tb-isi"><b>${x.h.tgl === hariIni() ? "Hari ini" : `${HARI_PENUH[x.h.w]}, ${tglIndo(x.h.tgl)}`}: ${namaTes(x.t)}</b>
+      <span class="ket">${kapanTeks(x.h.tgl)} · ${TES_SOAL} soal · ${TES_MENIT} menit · hari itu tanpa latihan lain${riwayatTes(x.t.id).length ? " · tes ulang" : ""}</span>
+      ${x.h.tgl > hariIni() && pilihHariTesHtml(x.h) ? `<span class="ket">Pilih hari tesmu pekan ini:</span>${pilihHariTesHtml(x.h)}` : ""}</span>
+      ${x.h.tgl === hariIni() ? `<button class="tbl tbl-utama tbl-kecil" data-ke="postes" data-arg="${x.t.id}">Mulai ▶</button>` : ""}</div>` : ""}
+    ${R.map(z => `<div class="tb-baris tb-remedi"><span class="tb-ikon">🔧</span><span class="tb-isi"><b>Sesi tambahan · ${namaTes(z.t)}</b><span class="ket">Nilai ${z.c.nilai} (belum ${BATAS_TES}). Setiap hari belajar: bahas soal yang salah + 1 level ulang, sampai tes ulang ${tglRingkas(z.sampai)}.</span></span></div>`).join("")}</div>`;
+}
+/* Pengingat sekali sehari saat aplikasi dibuka: tes dalam 3 hari ke depan */
+function ingatkanTes() {
+  if (S.peran === "ortu" || !S.profil || layarKini !== "beranda" || document.querySelector(".lapis") || S.pengingatTes === hariIni()) return;
+  const r = buatRencana(), x = r.status === "ok" && tesBerikut(r, 1)[0]; if (!x) return;
+  const d = selisihHari(hariIni(), x.h.tgl); if (d > 3) return;
+  S.pengingatTes = hariIni(); simpanData(false);
+  dialog(`<div style="font-size:52px">${x.t.tka ? "🎯" : "📝"}</div><h2>${d === 0 ? "Hari ini ada tes!" : d === 1 ? "Besok ada tes!" : `${d} hari lagi ada tes`}</h2>
+    <p class="ket"><b>${namaTes(x.t)}</b><br>${HARI_PENUH[x.h.w]}, ${tglIndo(x.h.tgl)} · ${TES_SOAL} soal · ${TES_MENIT} menit</p>
+    <p class="ket" style="text-align:left">✅ Hari tes tidak ada latihan lain, cukup tesnya saja.<br>🕰️ Siapkan waktu 75 menit tanpa gangguan.<br>📖 ${x.t.tka ? "Soalnya seperti TKA sungguhan." : `Materinya: ${cakupanTes(x.t)}.`}<br>🎯 Targetmu nilai <b>${BATAS_TES}</b>. Kalau belum, ada Sesi tambahan lalu tes ulang 7 hari kemudian.${x.h.akhirPekan && d > 0 ? "<br>📅 Kamu boleh memilih Sabtu atau Minggu di kartu beranda." : ""}</p>`,
+    [[d === 0 ? "Mulai tes ▶" : "Siap! 💪", "tbl-utama", d === 0 ? () => tampil("postes", x.t.id) : null], ...(d === 0 ? [["Nanti", "tbl-putih", null]] : [])]);
+}
+/* Kartu di layar Rencana: tes berikutnya, pilihan hari, dan Sesi tambahan */
+function kartuJadwalTes(r) {
+  const daftar = tesBerikut(r, 4), R = remediAktif(r.hari, r.tka, r.ingT);
+  if (!daftar.length && !R.length) return "";
+  return `<div class="kartu"><h2 class="rc-h2">📝 Jadwal tes</h2><p class="ket" style="margin:0 0 8px">Pos Tes &amp; Simulasi TKA: ${TES_SOAL} soal · ${TES_MENIT} menit · satu tes di akhir pekan (Sabtu atau Minggu pilihanmu). Hari tes tanpa latihan lain. Targetnya nilai <b>${BATAS_TES}</b>.</p>
+    <div class="rc-tugas">${daftar.map(({ h, t }) => `<div class="rc-item"><span class="rc-item-ikon">${t.tka ? "🎯" : "📝"}</span><span class="rc-item-isi"><b>${namaTes(t)}</b><span class="ket">${HARI_PENUH[h.w]}, ${tglIndo(h.tgl)} · ${kapanTeks(h.tgl)}${riwayatTes(t.id).length ? " · tes ulang" : ""}${h.akhirPekan ? "" : " · hari tes tambahan"}</span>${h.tgl > hariIni() ? pilihHariTesHtml(h) : ""}</span></div>`).join("")}</div>
+    ${R.length ? `<ul class="ket rc-catatan">${R.map(z => `<li>🔧 <b>Sesi tambahan ${namaTes(z.t)}</b> (nilai ${z.c.nilai}): setiap hari belajar sampai tes ulang ${tglIndo(z.sampai)}; latihan harian berkurang 1 level.</li>`).join("")}</ul>` : ""}</div>`;
 }
 function kesiapan(r) {
   const lv = totalLevelTKA(), sudah = lv - (r.total ?? PULAU_TKA.reduce((a, pl) => a + sisaLevel(pl).length, 0));
@@ -277,6 +392,8 @@ function lRencana() {
             <span class="rc-item-isi"><b>${x.judul}</b><span class="ket">${x.sub}${t.jenis === "level" && s.n > 1 ? ` · ${s.sel}/${s.n} level` : ""}</span></span>
             ${s.beres ? '<span class="rc-ok">Beres!</span>' : `<button class="tbl tbl-utama tbl-kecil" data-tugas="${i}">Mulai ▶</button>`}</div>`; }).join("")}</div>
         ${sel >= n ? '<p class="rc-selamat">🎉 Hebat! Target hari ini sudah tercapai. Mau lanjut? Semua tambahan membuat jadwal besok lebih ringan.</p>' : ""}`}</div>
+
+    ${kartuJadwalTes(r)}
 
     ${kartuTabungan(r, sj)}
 
@@ -462,6 +579,8 @@ function htmlRencanaOrtu() {
     ${si ? `${batangBanding(`🌍 Bahasa Inggris · sejak ${tglRingkas(si.sejak)} <span class="rc-chip-kecil ${si.kls}">${si.teks}</span>`, si.harap, si.dikerjakan, "tugas")}
       <p class="ket" style="margin:4px 0 10px">Target selesai <b>${tglIndo(r.ingT)}</b> (${CAKUPAN_ING.find(c => c[0] === a.ingSampai)[1].replace("&", "&amp;")})${r.ing.sisa ? " · ⚠️ belum muat dengan waktu sekarang" : r.ing.selesai ? ` · menurut jadwal selesai ${tglIndo(r.ing.selesai)}` : ""}. Sub level Dengar &amp; Baca = 2 tugas.</p>` : ""}
     <p class="ket" style="margin:0 0 10px">🎯 Target = kemajuan sampai kemarin + tugas hari ini.${sj0 ? ` Dibanding jadwal sejak ${tglRingkas(sj0.sejak)}: ${sj0.teks.replace(/ — .*/, "")}.` : ""}</p>
+    ${(() => { const x = tesBerikut(r, 2), R = remediAktif(r.hari, r.tka, r.ingT); if (!x.length && !R.length) return "";
+      return `<p class="ket" style="margin:0 0 10px">${x.length ? `📝 Tes berikutnya: ${x.map(({ h, t }) => `<b>${namaTes(t)}</b> ${HARI_SINGKAT[h.w]} ${tglRingkas(h.tgl)}${riwayatTes(t.id).length ? " (ulang)" : ""}`).join(", ")}. Hari tes akhir pekan dipilih anak (Sabtu/Minggu).` : ""}${R.map(z => ` 🔧 Sesi tambahan ${namaTes(z.t)} (nilai ${z.c.nilai}) sampai tes ulang ${tglRingkas(z.sampai)}.`).join("")}</p>`; })()}
     <h4 class="rc-sub">Catatan 14 hari terakhir</h4>
     <div style="overflow-x:auto"><table class="tabel-laporan rc-tabel-harian"><thead><tr><th>Hari</th><th>Target</th><th>Dikerjakan</th><th>Hasil</th></tr></thead><tbody>${baris.join("")}</tbody></table></div>
     <p class="ket" style="margin:8px 0 0">Target dicatat saat aplikasi dibuka pada hari itu. ${liburPilihan().length ? `Libur pilihan anak berikutnya: <b>${liburPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${cepatPilihan().length ? `Hari cepat (+1 level TKA &amp; B. Inggris): <b>${cepatPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}Waktu belajar ${a.menit} menit/hari · hari belajar ${a.hari.map(i => HARI_SINGKAT[i]).join(", ")}.</p></div>`;

@@ -204,6 +204,7 @@ function lBeranda() {
   const lanjut = mTer ? (() => { const L = Math.min(10, dataMisi(mTer.id).lv + 1); return misiSelesai(mTer.id) ? "" : `<button class="kartu misi" data-ke="jalur" data-arg="${mTer.id}" style="margin:0"><div class="ikon">${mTer.ikon}</div><div class="tengah"><div class="status">LANJUTKAN</div><h3>${mTer.judul}</h3><div class="status">Level ${L} · ${TINGKAT[L][0]}</div></div><div class="kanan" style="font-size:28px">▶️</div></button>`; })() : "";
   layar.innerHTML = `${S.peran === "ortu" ? `<div class="kartu banner-ortu"><div>👀 <b>HP orang tua</b> — hanya untuk memantau. Latihan dikerjakan di HP anak.</div><button class="tbl tbl-biru tbl-kecil" data-ke="ortu">Buka Dasbor Ortu</button></div>` : ""}
     <div class="hitung-mundur">${hm}<div class="piala-mini">${pialaSVG(S.piala.raksasa ? "raksasa" : "kosong", S.piala.raksasa ? "👑" : "")}</div></div>
+    ${kartuTesBeranda()}
     ${kartuRencanaBeranda()}
     ${lanjut}
     <button class="kartu harian ${sudahHarian ? "sudah" : ""}" id="harian" style="width:100%;text-align:left"><div class="ikon-besar">${sudahHarian ? "✅" : "🎁"}</div><div><h3>${sudahHarian ? "Tantangan Harian selesai!" : "Tantangan Harian"}</h3><div class="ket">${sudahHarian ? "Kembali lagi besok untuk hadiah berikutnya." : `${SOAL_HARIAN} soal campuran · hadiah <b>+50 💰</b> dan api semangat 🔥`}</div></div></button>
@@ -563,7 +564,7 @@ function ortuAtur(el) {
       <h3 style="margin-top:18px">📅 Rencana belajar menuju TKA</h3>
       <div class="baris-set"><label for="o-menit"><b>Waktu belajar per hari</b><div class="ket">Menentukan target level harian</div></label><select id="o-menit" class="isian-teks" style="width:auto;min-height:44px">${MENIT_PILIHAN.map(m => `<option value="${m}" ${m === aturRencana().menit ? "selected" : ""}>${m} menit</option>`).join("")}</select></div>
       <div class="baris-set"><span><b>Hari belajar</b><div class="ket">Hari lainnya libur</div></span><span class="pilih-hari" id="o-hb">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().hari.includes(i)}">${h}</button>`).join("")}</span></div>
-      <div class="baris-set"><span><b>Hari simulasi TKA</b><div class="ket">Satu paket 75 menit, dijadwalkan menjelang TKA</div></span><span class="pilih-hari" id="o-hs">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().sim.includes(i)}">${h}</button>`).join("")}</span></div>
+      <div class="baris-set"><span><b>Hari tes tambahan</b><div class="ket">Pos Tes &amp; Simulasi TKA (75 menit) diutamakan di Sabtu/Minggu pilihan anak, satu per pekan; hari ini dipakai bila belum muat</div></span><span class="pilih-hari" id="o-hs">${HARI_SINGKAT.map((h, i) => `<button type="button" data-hari="${i}" aria-pressed="${aturRencana().sim.includes(i)}">${h}</button>`).join("")}</span></div>
       <div class="baris-set"><label for="o-ingtarget"><b>Target selesai Bahasa Inggris</b><div class="ket">Program belajar: boleh sesudah TKA, bahkan beberapa tahun. Kosongkan bila tidak ikut rencana.</div></label>
         <span style="display:flex;gap:6px;align-items:center"><input id="o-ingtarget" type="date" class="isian-teks" style="width:auto;min-height:44px" value="${aturRencana().ingTarget}" min="${hariIni()}"><button type="button" class="tbl tbl-putih tbl-kecil" id="o-ingtarget-hapus" aria-label="Kosongkan target">✕</button></span></div>
       <div class="baris-set"><label for="o-ingsampai"><b>Cakupan target Bahasa Inggris</b><div class="ket">Untuk 54 misi. Dengar &amp; Baca = 5 sub level per misi</div></label><select id="o-ingsampai" class="isian-teks" style="width:auto;max-width:100%;min-height:44px;font-size:16px">${CAKUPAN_ING.map(([v, t]) => `<option value="${v}" ${v === aturRencana().ingSampai ? "selected" : ""}>${t}</option>`).join("")}</select></div>
@@ -636,7 +637,7 @@ function perbaruiTampilan() {
 }
 window.addEventListener("storage", e => { if (e.key === KUNCI_SIMPAN) perbaruiTampilan(); });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") { perbaruiTampilan(); sinkronkan(); }
+  if (document.visibilityState === "visible") { perbaruiTampilan(); sinkronkan(); setTimeout(ingatkanTes, 800); }
   else kirimSekarang();   // aplikasi ditutup/HP dikunci: kirim yang belum terkirim sebelum peramban membekukan halaman
 });
 
@@ -644,4 +645,5 @@ document.addEventListener("visibilitychange", () => {
 tampil(S.profil ? "beranda" : "sambut");
 if (S.profil && S.peran === "ortu") tampil("ortu");   // HP orang tua langsung ke halaman Orang Tua (tanpa PIN)
 cekTesTertunda();   // Pos Tes yang belum dikumpulkan saat aplikasi ditutup
+setTimeout(ingatkanTes, 1500);   // pengingat Pos Tes / Simulasi dalam 3 hari ke depan (sekali sehari)
 setTimeout(() => sinkronkan(), 800);

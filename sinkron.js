@@ -8,7 +8,7 @@
 
 // Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
 const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
-const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn"];   // rencanaHari ikut sinkron sejak 11 Nov 2026 (target hari ini sama di semua perangkat)   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
+const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn", "pengingatTes"];   // rencanaHari ikut sinkron sejak 11 Nov 2026 (target hari ini sama di semua perangkat)   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
 let sedangSinkron = false, jedaSinkron = null, sinkronLagi = false, jedaUlang = null;
 
 async function rpcPts(fn, arg) {
@@ -92,6 +92,8 @@ function gabungKemajuan(a, b) {
   const ca = a.rencanaCatatan || {}, cb = b.rencanaCatatan || {};
   g.rencanaCatatan = Object.fromEntries([...new Set([...Object.keys(ca), ...Object.keys(cb)])].sort().slice(-60).map(k => {
     const x = ca[k], y = cb[k]; return [k, !x ? y : !y ? x : (y.s > x.s || (y.s === x.s && y.t > x.t) ? y : x)]; }));
+  g.hariTes = {};   // pilihan hari tes per pekan (Sabtu/Minggu): yang dipilih paling akhir
+  for (const src of [a.hariTes || {}, b.hariTes || {}]) for (const k in src) if (!g.hariTes[k] || (src[k].t || 0) > (g.hariTes[k].t || 0)) g.hariTes[k] = src[k];
   g.salah = gabungSalah(a.salah, b.salah);   // soal yang terakhir dijawab salah (kesulitan.js)
   g.koin = Math.max(a.koin || 0, b.koin || 0);
   const api = [a.api, b.api].filter(x => x && x.tgl).sort((p, q) => (p.tgl === q.tgl ? q.n - p.n : p.tgl < q.tgl ? 1 : -1))[0];
