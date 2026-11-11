@@ -7,7 +7,7 @@
    - Target level per hari = sisa level dibagi hari belajar (7 hari belajar terakhir untuk mengulang materi lemah),
      paling banyak sesuai menit belajar per hari (≈ 1,3 menit per soal).
    Pengaturan (S.atur): menitHarian, hariBelajar [0=Senin…6=Minggu], hariSimulasi.
-   S.rencanaAwal (ikut sinkron): titik awal untuk menilai "sesuai jadwal". S.rencanaHari (perangkat ini): daftar
+   S.rencanaAwal (ikut sinkron): titik awal untuk menilai "sesuai jadwal". S.rencanaHari (ikut sinkron sejak 11 Nov 2026): daftar
    tugas hari ini dibekukan sejak pertama dilihat supaya tidak berubah saat dikerjakan. */
 "use strict";
 
@@ -159,7 +159,7 @@ function tugasHariIni(r) {
   const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan()]);   // pengaturan berubah → susun ulang tugas hari ini
   if (!S.rencanaHari || S.rencanaHari.tgl !== h || S.rencanaHari.kunci !== kunci) {
     const d = r.hari && r.hari[0] && r.hari[0].tgl === h ? r.hari[0] : null;
-    S.rencanaHari = { tgl: h, kunci, jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [] }; simpanData(false);
+    S.rencanaHari = { tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [] }; simpanData(false);
   }
   return S.rencanaHari;
 }

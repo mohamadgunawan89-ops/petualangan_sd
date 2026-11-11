@@ -8,7 +8,7 @@
 
 // Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
 const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
-const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn", "rencanaHari"];   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
+const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn"];   // rencanaHari ikut sinkron sejak 11 Nov 2026 (target hari ini sama di semua perangkat)   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
 let sedangSinkron = false, jedaSinkron = null;
 
 async function rpcPts(fn, arg) {
@@ -30,11 +30,45 @@ function dataKirim(x) { const d = {}; for (const k in x) if (!BAGIAN_LOKAL.inclu
   return d; }
 const adaKemajuan = x => !!(x && x.profil && (x.log?.length || Object.values(x.misi || {}).some(m => m.total) || Object.keys(x.posTes || {}).length));
 
+/* Pengaturan orang tua per kolom (11 Nov 2026): formulir Pengaturan menyimpan semua isian sekaligus, sehingga perangkat
+   yang isiannya masih lama (mis. iPad yang jarang dipakai) dulu bisa menimpa pengaturan terbaru dengan nilai lama.
+   Kini hanya kolom yang benar-benar diubah yang diberi waktu (S.waktuAtur[kolom]); saat digabung, tiap kolom
+   mengambil nilai dengan waktu terbaru. Kolom tanpa waktu (data lama) memakai aturan lama: seluruh pengaturan terbaru. */
+const potretAtur = x => ({ tka: x.tka || "", "profil.nama": x.profil?.nama, "profil.avatar": x.profil?.avatar,
+  ...Object.fromEntries(Object.entries(x.atur || {}).map(([k, v]) => ["atur." + k, v])) });
+function tandaiAtur(lama) {
+  const baru = potretAtur(S), t = Date.now(); S.waktuAtur = { ...(S.waktuAtur || {}) };
+  for (const k of new Set([...Object.keys(lama), ...Object.keys(baru)])) if (JSON.stringify(lama[k]) !== JSON.stringify(baru[k])) S.waktuAtur[k] = t;
+}
+function pasangKolom(g, k, v) {
+  if (k === "tka") g.tka = v || "";
+  else if (k.startsWith("profil.")) g.profil = { ...(g.profil || {}), [k.slice(7)]: v };
+  else if (k.startsWith("atur.")) { g.atur = { ...(g.atur || {}) }; if (v === undefined) delete g.atur[k.slice(5)]; else g.atur[k.slice(5)] = v; }
+}
+/* Tugas hari ini (rencanaHari): tanggal yang sama → yang pertama dibekukan (pengaturan sama) atau yang terbaru (pengaturan berubah) */
+function gabungHari(x, y) {
+  if (!x || !y) return x || y;
+  if (x.tgl !== y.tgl) return x.tgl > y.tgl ? x : y;
+  if (x.kunci !== y.kunci) return (x.dibuat || 0) >= (y.dibuat || 0) ? x : y;
+  return (x.dibuat || Infinity) <= (y.dibuat || Infinity) ? x : y;
+}
+
 /* a = kemajuan di perangkat ini, b = kemajuan di server */
 function gabungKemajuan(a, b) {
   const g = Object.assign(bawaan(), a, { misi: {}, piala: {}, posTes: {} });
   const ta = a.waktu?.atur || 0, tb = b.waktu?.atur || 0;
   if (!a.profil || tb > ta) { g.profil = b.profil || a.profil; g.tka = b.tka || ""; if (b.atur) g.atur = b.atur; g.waktu = { ...(a.waktu || {}), atur: tb }; }
+  if (a.profil && b.profil) {   // per kolom: yang diubah paling akhir menang
+    const fa = a.waktuAtur || {}, fb = b.waktuAtur || {}, pa = potretAtur(a), pb = potretAtur(b); g.waktuAtur = {};
+    for (const k of new Set([...Object.keys(fa), ...Object.keys(fb)])) { const ka = fa[k] || 0, kb = fb[k] || 0;
+      pasangKolom(g, k, kb > ka ? pb[k] : pa[k]); g.waktuAtur[k] = Math.max(ka, kb); }
+  } else g.waktuAtur = { ...((a.profil ? a : b).waktuAtur || {}) };
+  g.rencanaHari = gabungHari(a.rencanaHari, b.rencanaHari);
+  // Titik awal "sesuai jadwal": yang cocok dengan tanggal TKA / target Bahasa Inggris sekarang, dan yang paling awal
+  const awal = (x, y, cocok) => [x, y].filter(v => v && cocok(v)).sort((p, q) => (p.tgl < q.tgl ? -1 : p.tgl > q.tgl ? 1 : 0))[0] || x || y;
+  g.rencanaAwal = awal(a.rencanaAwal, b.rencanaAwal, v => v.tka === g.tka);
+  const kunciIng = (g.atur?.ingTarget || "") + "|" + ([0, 5, 10].includes(+g.atur?.ingSampai) ? +g.atur.ingSampai : 5);
+  g.rencanaAwalIng = awal(a.rencanaAwalIng, b.rencanaAwalIng, v => v.kunci === kunciIng);
   for (const id of new Set([...Object.keys(a.misi || {}), ...Object.keys(b.misi || {})])) {
     const x = a.misi?.[id], y = b.misi?.[id];
     if (!x || !y) { g.misi[id] = JSON.parse(JSON.stringify(x || y)); continue; }
