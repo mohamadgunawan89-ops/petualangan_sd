@@ -164,9 +164,24 @@ function tugasHariIni(r) {
   const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan()]);   // pengaturan berubah → susun ulang tugas hari ini
   if (!S.rencanaHari || S.rencanaHari.tgl !== h || S.rencanaHari.kunci !== kunci) {
     const d = r.hari && r.hari[0] && r.hari[0].tgl === h ? r.hari[0] : null;
-    S.rencanaHari = { tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [] }; simpanData(false);
+    S.rencanaHari = { tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [],
+      awal: { tka: totalLevelTKA() - PULAU_TKA.reduce((s, pl) => s + sisaLevel(pl).length, 0), ing: sisaInggris().reduce((s, x) => s + x.biaya, 0) } }; simpanData(false);
   }
   return S.rencanaHari;
+}
+/* Target di Dasbor Ortu (11 Nov 2026) = kemajuan sampai awal hari ini + tugas hari ini (per mapel).
+   Contoh: nyata kemarin 64 level, tugas hari ini 2 level → target 66. Bahasa Inggris dalam "tugas" (sub level = 2).
+   Status "lebih cepat/tertinggal" sejak titik awal (statusJadwal) tetap dipakai untuk Tabungan belajar & laporan. */
+function targetHariIni(r, x, k) {
+  const th = tugasHariIni(r); let n = 0, sel = 0;
+  th.tugas.forEach(t => { if (t.jenis !== "level" && t.jenis !== "sub") return;
+    const pl = cariMisi(t.m).pulau; if ((k === "tka") !== PULAU_TKA.includes(pl) || (k === "ing" && pl !== "big")) return;
+    const st = statusTugas(t), f = t.jenis === "sub" ? 2 : 1; n += st.n * f; sel += st.sel * f; });
+  const awalHari = th.awal && th.awal.tka !== undefined ? (k === "tka" ? th.awal.tka - S.rencanaAwal.sudah : S.rencanaAwalIng.sisa - th.awal.ing) : null;
+  const sebelum = Math.max(0, Math.min(x.dikerjakan, awalHari !== null ? awalHari : x.dikerjakan - sel));
+  const harap = sebelum + n, selisih = x.dikerjakan - harap, sat = k === "tka" ? "level" : "tugas";
+  return { ...x, harap, selisih, kls: selisih > 0 ? "cepat" : selisih === 0 ? "pas" : "kejar",
+    teks: selisih > 0 ? `🚀 Lebih ${selisih} ${sat} dari target` : selisih === 0 ? (n ? "✅ Target hari ini tercapai" : "👍 Sesuai jadwal") : `⏳ Hari ini kurang ${-selisih} ${sat}` };
 }
 const logHari = tgl => S.log.filter(x => hariIni(new Date(x.t)) === tgl);
 function statusTugas(t) {
@@ -407,7 +422,8 @@ function batangBanding(label, harap, nyata, satuan) {
 function htmlRencanaOrtu() {
   const r = buatRencana();
   if (r.status !== "ok") return `<div class="kartu"><h3>📅 Target vs kemajuan nyata</h3><p class="ket" style="margin:6px 0 0">${r.status === "tanpa" ? "Belum ada rencana. Isi <b>tanggal TKA</b> atau <b>target Bahasa Inggris</b> di tab Pengaturan, lalu target harian anak dibuat otomatis." : "Tidak ada rencana aktif (tanggal TKA sudah lewat)."}</p></div>`;
-  const { n, sel } = catatHarian(r), a = aturRencana(), sj = r.tka ? statusJadwal(r) : null, si = statusIng(r);
+  const { n, sel } = catatHarian(r), a = aturRencana(), sj0 = r.tka ? statusJadwal(r) : null, si0 = statusIng(r);
+  const sj = sj0 && targetHariIni(r, sj0, "tka"), si = si0 && targetHariIni(r, si0, "ing");
   // 14 hari terakhir (sampai hari ini)
   const cat = S.rencanaCatatan || {}, baris = [];
   for (let k = 13; k >= 0; k--) {
@@ -430,6 +446,7 @@ function htmlRencanaOrtu() {
       <p class="ket" style="margin:4px 0 10px">Target ${r.target} level per hari belajar · materi selesai sekitar <b>${r.selesaiMateri ? tglIndo(r.selesaiMateri) : "–"}</b> · simulasi TKA tuntas ${PULAU_TKA.reduce((s, pl) => s + paketTKA(pl).filter(x => terbaikTes(x.id) >= TES_TUNTAS).length, 0)}/${PAKET_TKA * 2}${cepatPilihan().length ? ` · 🚀 ${cepatPilihan().length} hari cepat dipilih anak` : ""}.</p>` : ""}
     ${si ? `${batangBanding(`🌍 Bahasa Inggris · sejak ${tglRingkas(si.sejak)} <span class="rc-chip-kecil ${si.kls}">${si.teks}</span>`, si.harap, si.dikerjakan, "tugas")}
       <p class="ket" style="margin:4px 0 10px">Target selesai <b>${tglIndo(r.ingT)}</b> (${CAKUPAN_ING.find(c => c[0] === a.ingSampai)[1].replace("&", "&amp;")})${r.ing.sisa ? " · ⚠️ belum muat dengan waktu sekarang" : r.ing.selesai ? ` · menurut jadwal selesai ${tglIndo(r.ing.selesai)}` : ""}. Sub level Dengar &amp; Baca = 2 tugas.</p>` : ""}
+    <p class="ket" style="margin:0 0 10px">🎯 Target = kemajuan sampai kemarin + tugas hari ini.${sj0 ? ` Dibanding jadwal sejak ${tglRingkas(sj0.sejak)}: ${sj0.teks.replace(/ — .*/, "")}.` : ""}</p>
     <h4 class="rc-sub">Catatan 14 hari terakhir</h4>
     <div style="overflow-x:auto"><table class="tabel-laporan rc-tabel-harian"><thead><tr><th>Hari</th><th>Target</th><th>Dikerjakan</th><th>Hasil</th></tr></thead><tbody>${baris.join("")}</tbody></table></div>
     <p class="ket" style="margin:8px 0 0">Target dicatat saat aplikasi dibuka pada hari itu. ${liburPilihan().length ? `Libur pilihan anak berikutnya: <b>${liburPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}${cepatPilihan().length ? `Hari cepat (+1 level TKA &amp; B. Inggris): <b>${cepatPilihan().map(x => `${HARI_SINGKAT[hariKe(x)]} ${tglRingkas(x)}`).join(", ")}</b>. ` : ""}Waktu belajar ${a.menit} menit/hari · hari belajar ${a.hari.map(i => HARI_SINGKAT[i]).join(", ")}.</p></div>`;
