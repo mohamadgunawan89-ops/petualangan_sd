@@ -121,14 +121,19 @@ function buatRencana(dari = hariIni()) {
 function titikAwal(r) {
   const sudah = totalLevelTKA() - r.total;
   if (!S.rencanaAwal || S.rencanaAwal.tka !== S.tka || sudah < S.rencanaAwal.sudah) {
-    S.rencanaAwal = { tgl: hariIni(), tka: S.tka, sudah, total: r.total, target: r.target, hariBelajar: r.hari.filter(h => h.jenis === "belajar" || h.piknik).length }; simpanData(false);
+    S.rencanaAwal = { tgl: hariIni(), tka: S.tka, sudah, total: r.total, target: r.target, hariBelajar: r.hari.filter(h => (h.jenis === "belajar" || h.piknik) && h.tgl < r.tka).length }; simpanData(false);
   }
   return S.rencanaAwal;
 }
 function statusJadwal(r) {
   const aw = titikAwal(r), sudahKini = totalLevelTKA() - r.total, dikerjakan = sudahKini - aw.sudah;
   const a = aturRencana(); let lewat = 0; for (let t = aw.tgl; t < hariIni(); t = tambahHari(t, 1)) if (a.hari.includes(hariKe(t))) lewat++;
-  const harap = aw.hariBelajar ? Math.round(aw.total * Math.min(1, lewat / Math.max(1, aw.hariBelajar - 3))) : 0, selisih = dikerjakan - harap;
+  /* Hari belajar dari titik awal sampai sebelum H-1 TKA, dihitung dengan aturan yang sama seperti "lewat" (11 Nov 2026).
+     Dulu memakai aw.hariBelajar yang tersimpan; bila ada target Bahasa Inggris sesudah TKA, angka itu ikut menghitung
+     hari sesudah TKA (mis. 350, bukan ±135), sehingga target Matematika & Bahasa Indonesia jauh terlalu kecil dan
+     berbeda antarperangkat. */
+  let hariTKA = 0; for (let t = aw.tgl, ujung = tambahHari(aw.tka || r.tka, -1); t < ujung; t = tambahHari(t, 1)) if (a.hari.includes(hariKe(t))) hariTKA++;
+  const harap = hariTKA ? Math.round(aw.total * Math.min(1, lewat / Math.max(1, hariTKA - 3))) : 0, selisih = dikerjakan - harap;
   const x = { selisih, harap, dikerjakan, sejak: aw.tgl };
   return selisih >= 3 ? { kls: "cepat", teks: `🚀 Lebih cepat ${selisih} level dari jadwal`, ...x } : selisih >= -1 ? { kls: "pas", teks: "👍 Sesuai jadwal", ...x }
     : { kls: "kejar", teks: `⏳ Tertinggal ${-selisih} level — ayo kejar sedikit demi sedikit`, ...x };
