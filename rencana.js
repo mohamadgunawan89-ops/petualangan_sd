@@ -71,6 +71,19 @@ function buatRencana(dari = hariIni()) {
   const simLebih = sims.length - si;
   const cepatSet = new Set(cepatPilihan());
   hari.forEach(h => { if (h.jenis === "calon") h.jenis = "belajar"; h.cepat = h.jenis === "belajar" && cepatSet.has(h.tgl); });
+  /* Pos Tes (11 Nov 2026): Pos Tes yang sudah terbuka tetapi belum tuntas dijadwalkan di hari belajar berikutnya, satu per hari.
+     Pos Tes 30 soal · 75 menit, jadi hari itu hanya Pos Tes (seperti hari simulasi). Bila sudah dicoba tetapi belum tuntas,
+     dijadwalkan lagi 7 hari sesudah percobaan terakhir (waktu untuk mengulang materi). Matematika & B. Indonesia hanya
+     sebelum TKA; Bahasa Inggris hanya bila ada target selesai. Tugas hari ini yang sudah dibekukan tidak diubah. */
+  const beku = S.rencanaHari && S.rencanaHari.tgl === dari ? S.rencanaHari.tugas : null;
+  const posAntre = POS_TES.filter(t => !t.tka && tesTerbuka(t) && terbaikTes(t.id) < TES_TUNTAS && (PULAU_TKA.includes(t.pulau) ? !!tka : t.pulau === "big" && !!ingT));
+  let posLebih = 0;
+  posAntre.forEach(t => {
+    const akhirCoba = riwayatTes(t.id).reduce((m, x) => Math.max(m, x.t), 0), coba = akhirCoba ? tambahHari(hariIni(new Date(akhirCoba)), 7) : "";
+    const diBeku = beku && beku.some(x => x.tid === t.id), mulai = [diBeku ? dari : beku ? tambahHari(dari, 1) : dari, coba].sort().pop();
+    const h = hari.find(x => x.jenis === "belajar" && !x.posTes && x.tgl >= mulai && (diBeku || x.tgl !== dari || !beku) && (PULAU_TKA.includes(t.pulau) ? x.tgl < tka : x.tgl <= ingT));
+    if (h) { h.jenis = "sim"; h.posTes = true; h.cepat = false; h.tugas.push({ jenis: "sim", tid: t.id }); } else posLebih++;
+  });
   const plus = h => (h.cepat ? 1 : 0);   // hari cepat: +1 level di atas jatah biasa
   const belajar = hari.filter(h => h.jenis === "belajar"), kapasitas = Math.max(1, Math.floor(a.menit / menitPerLevel()));
   const sisaCap = new Map(belajar.map(h => [h, kapasitas]));
@@ -114,7 +127,8 @@ function buatRencana(dari = hariIni()) {
   const sisaTakTerbagi = Q[0].length + Q[1].length;
   const selesaiMateri = [...belajarTKA].reverse().find(h => h.tugas.some(t => t.jenis === "level" && PULAU_TKA.includes(cariMisi(t.m).pulau)));
   return { status: "ok", tka, ingT, akhir: tambahHari(ujung, -1), hari, total, target, kapasitas, perlu, simLebih, sisaTakTerbagi, menit: a.menit, selesaiMateri: selesaiMateri && selesaiMateri.tgl,
-    awalSim: (hari.find(h => h.jenis === "sim") || {}).tgl, sims: sims.length, ing };
+    awalSim: (hari.find(h => h.jenis === "sim" && !h.posTes) || {}).tgl, sims: sims.length, ing,
+    posTes: hari.filter(h => h.posTes).map(h => ({ tgl: h.tgl, tid: h.tugas[0].tid })), posLebih };
 }
 
 /* Titik awal rencana (untuk status "sesuai jadwal") — dibuat ulang bila tanggal TKA berubah */
@@ -274,7 +288,7 @@ function lRencana() {
     <div class="kartu"><div class="rc-judul"><h2 class="rc-h2">🗓️ Kalender belajar</h2><button type="button" class="tbl tbl-putih tbl-kecil" id="rc-lipat-semua">Buka semua</button></div>
       <p class="ket" style="margin:0 0 6px">Ketuk nama bulan untuk membuka atau menutup. Ketuk tanggal untuk melihat tugasnya.</p>
       <div id="rc-kalender">${kalenderRencana(r)}</div>
-      <div class="rc-legenda kecil"><span><i class="belajar"></i>Belajar</span><span><i class="sim"></i>Simulasi TKA</span><span><i class="libur"></i>Libur</span><span><i class="rehat"></i>Rehat</span><span><i class="hariH"></i>Hari H</span></div></div>
+      <div class="rc-legenda kecil"><span><i class="belajar"></i>Belajar</span><span><i class="sim"></i>Simulasi TKA / Pos Tes</span><span><i class="libur"></i>Libur</span><span><i class="rehat"></i>Rehat</span><span><i class="hariH"></i>Hari H</span></div></div>
 
     <div class="kartu"><h2 class="rc-h2">📊 Ringkasan rencana</h2>
       <div class="rc-ringkas">${PULAU_TKA.map(pl => { const p = cariPulau(pl), sl = sisaLevel(pl).length, tot = MISI.filter(m => m.pulau === pl).length * 10, sm = paketTKA(pl).filter(t => terbaikTes(t.id) >= TES_TUNTAS).length;
@@ -285,6 +299,7 @@ function lRencana() {
       <ul class="ket rc-catatan">
         <li>⏱️ Waktu belajar <b>${r.menit} menit</b> sehari (±${r.kapasitas} level) · hari belajar ${aturRencana().hari.map(i => HARI_SINGKAT[i]).join(", ")}${r.tka ? ` · hari simulasi ${aturRencana().sim.map(i => HARI_SINGKAT[i]).join(", ") || "–"}` : ""}.</li>
         ${r.tka ? `<li>🎯 Target <b>${r.target} level</b> per hari belajar${r.selesaiMateri ? ` · materi selesai sekitar <b>${tglIndo(r.selesaiMateri)}</b>` : r.total ? "" : " · semua materi sudah selesai 🎉"}.</li>` : `<li>🗓️ Tanggal TKA belum diisi atau sudah lewat: rencana hanya untuk program Bahasa Inggris.</li>`}
+        ${r.posTes.length || r.posLebih ? `<li>📝 Pos Tes terjadwal: ${r.posTes.map(p => `<b>${judulTes(cariTes(p.tid))} ${cariPulau(cariTes(p.tid).pulau).judul}</b> ${tglRingkas(p.tgl)}`).join(", ") || "–"}${r.posLebih ? ` (${r.posLebih} belum kebagian hari)` : ""}. Pos Tes dijadwalkan begitu semua misi di pos itu selesai; hari itu hanya Pos Tes (75 menit).</li>` : ""}
         ${r.tka && r.sims ? `<li>📝 ${r.sims} paket Simulasi TKA dijadwalkan mulai <b>${r.awalSim ? tglIndo(r.awalSim) : "–"}</b>${r.simLebih ? ` (${r.simLebih} paket belum kebagian hari — tambah hari simulasi)` : ""}.</li>` : ""}
         ${r.ing ? (r.ing.sisa ? `<li class="rc-awas">⚠️ Bahasa Inggris tidak cukup waktu sampai ${tglIndo(r.ing.batas)}: perlu ±${r.ing.perlu} tugas per hari latihan (±${r.ing.menitPerlu} menit khusus Bahasa Inggris), sedangkan waktunya ±${r.kapasitas} tugas sehari${r.tka && r.total ? " (sebelum TKA hanya separuh, karena materi TKA diutamakan)" : ""}.
             Dengan pengaturan sekarang, Bahasa Inggris selesai sekitar <b>${r.ing.perkiraan ? tglIndo(r.ing.perkiraan) : "lebih dari 20 tahun lagi"}</b>. Mundurkan target, tambah hari latihan, atau tambah menit belajar.</li>`
@@ -316,7 +331,7 @@ function htmlGaris(mulai, ujung, seg, titik, bendera, tengah) {
 }
 function garisTKA(r) {
   const aw = S.rencanaAwal, mulai = aw && aw.tgl < hariIni() ? aw.tgl : hariIni(), akhirMateri = r.selesaiMateri ? tambahHari(r.selesaiMateri, 1) : hariIni();
-  const awalSim = r.awalSim || tambahHari(r.tka, -1), rehat = tambahHari(r.tka, -1), mSim = awalSim < akhirMateri ? akhirMateri : awalSim, sims = r.hari.filter(h => h.jenis === "sim");
+  const awalSim = r.awalSim || tambahHari(r.tka, -1), rehat = tambahHari(r.tka, -1), mSim = awalSim < akhirMateri ? akhirMateri : awalSim, sims = r.hari.filter(h => h.jenis === "sim" && !h.posTes);
   return `<div class="kartu"><h2 class="rc-h2">🗺️ Perjalanan menuju TKA</h2>
     ${htmlGaris(mulai, tambahHari(r.tka, 1), [["lewat", mulai, hariIni(), "Sudah dilalui"], ["materi", hariIni(), akhirMateri, "Kuasai materi"], ["ulang", akhirMateri, mSim, "Ulang materi"],
       ["sim", mSim, rehat, "Simulasi TKA"], ["rehat", rehat, r.tka, "Rehat"], ["hariH", r.tka, tambahHari(r.tka, 1), "Hari TKA"]], sims.map(h => [h.tgl, "rc-titik-sim", "Simulasi TKA " + tglIndo(h.tgl)]), "🏁")}
@@ -375,7 +390,7 @@ function mingguIni(r) {
     else if (tgl === r.tka) { ikon = "🏁"; ket = "TKA"; kls = "hariH"; }
     else if (!h) { ikon = "·"; ket = ""; kls = "kosong"; }
     else { const nL = jumlahButir(h);
-      ikon = h.piknik ? "🌴" : h.cepat ? "🚀" : h.jenis === "sim" ? "📝" : h.jenis === "bebas" ? "🎉" : h.jenis === "libur" ? "😴" : h.jenis === "rehat" ? "😌" : nL ? "📘" : "🔁"; ket = h.piknik ? "libur pilihan" : h.jenis === "sim" ? "simulasi" : h.jenis === "bebas" ? "bebas" : h.jenis === "libur" ? "libur" : h.jenis === "rehat" ? "rehat" : nL ? `${nL} tugas` : "ulang"; kls = h.jenis + (h.cepat ? " cepat" : ""); }
+      ikon = h.piknik ? "🌴" : h.cepat ? "🚀" : h.jenis === "sim" ? "📝" : h.jenis === "bebas" ? "🎉" : h.jenis === "libur" ? "😴" : h.jenis === "rehat" ? "😌" : nL ? "📘" : "🔁"; ket = h.piknik ? "libur pilihan" : h.posTes ? "Pos Tes" : h.jenis === "sim" ? "simulasi" : h.jenis === "bebas" ? "bebas" : h.jenis === "libur" ? "libur" : h.jenis === "rehat" ? "rehat" : nL ? `${nL} tugas` : "ulang"; kls = h.jenis + (h.cepat ? " cepat" : ""); }
     return `<div class="rc-hari ${kls} ${kini ? "kini" : ""}"><span class="rc-hari-nama">${HARI_SINGKAT[i]}</span><span class="rc-hari-tgl">${+tgl.slice(8)}</span><span class="rc-hari-ikon">${ikon}</span><span class="rc-hari-ket">${ket}</span></div>`; }).join("");
 }
 /* Kalender dilipat per bulan (12 Okt 2026): bulan ini terbuka, bulan lain hanya judul & ringkasan; rincian tanggal
