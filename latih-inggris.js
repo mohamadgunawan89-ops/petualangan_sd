@@ -463,7 +463,7 @@ function hasilSub() {
   const lama = ingLihat(id).s[n], pertama = lulus && lama < ING_LULUS_SUB, terbaik = persen > lama; let koin = 0;
   if (!coba) { const x = dataIng(id); if (terbaik) x.s[n] = persen; catatIng({ m: id, j: "sub", n, p: persen, b: benar }); koin = benar * 5 + (pertama ? 30 : 0); S.koin += koin; catatApi(); simpanData(); }
   const tuntas = !coba && latihTuntas(id), m = cariMisi(id);
-  LT = null; layarKini = "hasil"; kepala.hidden = true; pasangNav(null);
+  LT = null; layarKini = "hasil"; kepala.hidden = true; pasangNav(null); kirimSekarang();
   layar.innerHTML = `<div class="kartu hasil"><div class="lt-label-hasil">${m.ikon} ${m.judul} · Sub level ${n + 1} · ${nama[n]}</div>
     <div class="lt-cincin besar ${lulus ? "lulus" : ""}">${persen}%</div>
     <h1>${lulus ? (tuntas && pertama ? "Dengar & Baca tuntas! 🎉" : "Lulus!") : "Hampir!"}</h1>

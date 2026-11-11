@@ -239,7 +239,7 @@ function kumpulkanTes(waktuHabis) {
     rek.rekor = terbaikLama >= 0 && nilai > terbaikLama;
     S.koin += koin; catatApi(); simpanData(); hapusTesJalan();
   }
-  T = null; ULAS = { tid: x.tid, coba: x.coba, soal: x.soal, jawab: x.jawab, hasil, saring: false, ringkas: [rek, koin, waktuHabis] };
+  T = null; kirimSekarang(); ULAS = { tid: x.tid, coba: x.coba, soal: x.soal, jawab: x.jawab, hasil, saring: false, ringkas: [rek, koin, waktuHabis] };
   lHasilTes(rek, koin, waktuHabis);
   if (antrean.length) setTimeout(() => tunjukPiala(antrean), 1300);
 }

@@ -9,7 +9,7 @@
 // Alamat server di config.js (sama dengan aplikasi lain); tanpa config.js game tetap jalan, hanya tidak sinkron.
 const SINKRON_DB = window.TKA_SUPABASE && window.TKA_SUPABASE.url ? window.TKA_SUPABASE : null;
 const BAGIAN_LOKAL = ["riwayat", "suara", "sinkron", "sinkronMati", "peran", "lajuEn", "artiEn"];   // rencanaHari ikut sinkron sejak 11 Nov 2026 (target hari ini sama di semua perangkat)   // peran: "anak" (bawaan) atau "ortu"   // tetap di perangkat ini, tidak dikirim
-let sedangSinkron = false, jedaSinkron = null;
+let sedangSinkron = false, jedaSinkron = null, sinkronLagi = false, jedaUlang = null;
 
 async function rpcPts(fn, arg) {
   if (!SINKRON_DB) throw new Error("Server belum diatur (config.js).");
@@ -116,7 +116,9 @@ async function buatKodeAnak() {
 
 /* Ambil dari server → gabung → simpan di perangkat → kirim gabungan ke server */
 async function sinkronkan({ diam = true } = {}) {
-  if (sedangSinkron || !S.profil) return false;
+  if (!S.profil) return false;
+  if (sedangSinkron) { sinkronLagi = true; return false; }   // perubahan baru saat sinkron berjalan: diulang setelah selesai
+  clearTimeout(jedaUlang);
   if (!S.sinkron?.kode) {
     if (S.sinkronMati) return false;
     sedangSinkron = true;
@@ -148,8 +150,12 @@ async function sinkronkan({ diam = true } = {}) {
     if (S.sinkron) { S.sinkron.tertunda = true; S.sinkron.galat = e.message; simpanData(false); }
     if (layarKini === "ortu") segarkanKartuSinkron();
     if (!diam) tampilPesan("⚠️ Belum tersimpan online: " + e.message, 4000);
+    jedaUlang = setTimeout(() => sinkronkan(), 45000);   // sinyal putus-sambung: coba lagi sendiri, tidak menunggu aplikasi dibuka ulang
     return false;
-  } finally { sedangSinkron = false; }
+  } finally {
+    sedangSinkron = false;
+    if (sinkronLagi) { sinkronLagi = false; setTimeout(() => sinkronkan(), 300); }
+  }
 }
 /* Dipanggil setiap kali kemajuan disimpan: kirim beberapa detik kemudian (tidak di tiap jawaban) */
 function jadwalSinkron() {
@@ -157,7 +163,19 @@ function jadwalSinkron() {
   if (S.sinkron) S.sinkron.tertunda = true;
   clearTimeout(jedaSinkron); jedaSinkron = setTimeout(() => sinkronkan(), 4000);
 }
+/* Level, Pos Tes, atau sub level Bahasa Inggris selesai: kirim saat itu juga. Sebelumnya pengiriman menunggu 4 detik,
+   dan bila anak langsung menekan "Lanjut ke Level berikutnya" (atau menutup HP) dalam 4 detik itu, kirimannya batal
+   sampai anak berhenti bermain — sehingga HP orang tua lama sekali berubah. */
+function kirimSekarang() {
+  if (!S.profil || (!S.sinkron?.kode && S.sinkronMati) || (S.sinkron?.kode && !S.sinkron.tertunda)) return;
+  clearTimeout(jedaSinkron); sinkronkan();
+}
 window.addEventListener("online", () => sinkronkan());
+/* HP orang tua: selama aplikasi terbuka, ambil kemajuan terbaru tiap 30 detik (sebelumnya hanya saat aplikasi dibuka ulang) */
+setInterval(() => {
+  if (document.visibilityState !== "visible" || !S.sinkron?.kode || (S.peran !== "ortu" && layarKini !== "ortu")) return;
+  sinkronkan();
+}, 30000);
 
 /* ---------- Tampilan di tab Pengaturan ---------- */
 const jamPendek = t => { const d = new Date(t); return `${tglIndo(hariIni(d))}, ${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`; };

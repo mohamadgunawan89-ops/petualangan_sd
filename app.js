@@ -382,7 +382,7 @@ function selesaiLevel() {
     S.harian = { tgl: hariIni(), selesai: true }; S.koin += 50; simpanData(); bunyi.lulus(); konfeti(1.8);
     layar.innerHTML = `<div class="kartu hasil"><div style="font-size:64px">🎁</div><h1>Tantangan Harian Selesai!</h1><div class="ringkas"><div><b>${benar}/${M.n}</b>benar</div><div><b>+${50 + benar * 10}</b>koin 💰</div><div><b>${S.api.n} 🔥</b>hari berturut-turut</div></div>
       <p class="ket">Kembali lagi besok untuk menjaga api semangatmu tetap menyala!</p><div class="tombol-tumpuk"><button class="tbl tbl-utama" data-ke="beranda">Kembali ke Peta 🗺️</button></div></div>`;
-    M = null; return;
+    M = null; kirimSekarang(); return;
   }
   const { misi: id, L, n, toleransi, salah } = M, d = dataMisi(id), lulus = salah <= toleransi, koinSoal = M.tanda.filter(x => x !== "salah").length * 10;
   let bintang = lulus ? (salah === 0 ? 3 : 2) - (M.petunjuk ? 1 : 0) : 0; if (lulus) bintang = Math.max(1, bintang);
@@ -412,7 +412,7 @@ function selesaiLevel() {
       <button class="tbl tbl-putih" data-ke="jalur" data-arg="${id}">Kembali ke jalur level</button></div></div>`;
   layar.querySelector("#h-lanjut")?.addEventListener("click", () => { bunyi.klik(); mulaiLevel(id, L + 1); });
   layar.querySelector("#h-ulang").addEventListener("click", () => { bunyi.klik(); mulaiLevel(id, L); });
-  M = null; layarKini = "hasil";
+  M = null; layarKini = "hasil"; kirimSekarang();
   if (lulus) { bunyi.lulus(); if (bintang === 3 || L === 10) konfeti(1.6); } else bunyi.gagal();
   if (antrean.length) setTimeout(() => tunjukPiala(antrean), lulus ? 1300 : 300);
 }
@@ -635,7 +635,10 @@ function perbaruiTampilan() {
   if (["beranda", "piala", "pulau", "jalur", "rencana"].includes(layarKini)) { const y = window.scrollY; tampil(layarKini, argKini); window.scrollTo(0, y); }
 }
 window.addEventListener("storage", e => { if (e.key === KUNCI_SIMPAN) perbaruiTampilan(); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { perbaruiTampilan(); sinkronkan(); } });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") { perbaruiTampilan(); sinkronkan(); }
+  else kirimSekarang();   // aplikasi ditutup/HP dikunci: kirim yang belum terkirim sebelum peramban membekukan halaman
+});
 
 /* ================= Mulai ================= */
 tampil(S.profil ? "beranda" : "sambut");
