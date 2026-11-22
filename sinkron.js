@@ -49,8 +49,10 @@ function pasangKolom(g, k, v) {
 function gabungHari(x, y) {
   if (!x || !y) return x || y;
   if (x.tgl !== y.tgl) return x.tgl > y.tgl ? x : y;
-  if (x.kunci !== y.kunci) return (x.dibuat || 0) >= (y.dibuat || 0) ? x : y;
-  return (x.dibuat || Infinity) <= (y.dibuat || Infinity) ? x : y;
+  const g = x.kunci !== y.kunci ? ((x.dibuat || 0) >= (y.dibuat || 0) ? x : y) : ((x.dibuat || Infinity) <= (y.dibuat || Infinity) ? x : y);
+  // Tanda "Sesi tambahan sudah dipelajari" dari perangkat mana pun ikut terbawa (dulu hilang bila salinan perangkat lain yang menang)
+  const baca = [x.remediBaca, y.remediBaca].filter(v => v === x.tgl)[0];
+  return baca && g.remediBaca !== baca ? { ...g, remediBaca: baca } : g;
 }
 
 /* a = kemajuan di perangkat ini, b = kemajuan di server */

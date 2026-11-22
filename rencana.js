@@ -255,7 +255,8 @@ function statusTugas(t) {
   if (t.jenis === "sub") { const s = ingLihat(t.m).s, n = t.sampai - t.dari + 1; let sel = 0; for (let i = t.dari; i <= t.sampai; i++) if (s[i] >= ING_LULUS_SUB) sel++;
     return { n, sel, beres: sel >= n || dataMisi(t.m).lv > 0 }; }
   if (t.jenis === "sim") { const hari = riwayatTes(t.tid).some(x => hariIni(new Date(x.t)) === hariIni()) || terbaikTes(t.tid) >= BATAS_TES; return { n: 1, sel: hari ? 1 : 0, beres: hari }; }
-  if (t.jenis === "remedi") { const ok = t.m ? logHari(hariIni()).some(x => x.m === t.m && x.L === t.L && x.lulus) : !!(S.rencanaHari && S.rencanaHari.remediBaca === hariIni()); return { n: 1, sel: ok ? 1 : 0, beres: ok }; }
+  /* Level ulang: cukup lulus satu level misi itu hari ini (nomor level di salinan perangkat lain bisa berbeda) */
+  if (t.jenis === "remedi") { const ok = t.m ? logHari(hariIni()).some(x => x.m === t.m && x.lulus) : !!(S.rencanaHari && S.rencanaHari.remediBaca === hariIni()); return { n: 1, sel: ok ? 1 : 0, beres: ok }; }
   const ada = logHari(hariIni()).length > 0 || (S.harian.tgl === hariIni() && S.harian.selesai); return { n: 1, sel: ada ? 1 : 0, beres: ada };
 }
 function teksTugas(t) {
