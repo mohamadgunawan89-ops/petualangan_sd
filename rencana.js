@@ -218,6 +218,9 @@ function statusIng(r) {
 /* Catatan harian target vs dikerjakan (ikut tersinkron, 60 hari) untuk Dasbor Ortu */
 function catatHarian(r) {
   const th = tugasHariIni(r), st = th.tugas.map(statusTugas), c = { t: st.reduce((a, x) => a + x.n, 0), s: st.reduce((a, x) => a + x.sel, 0), j: th.jenis };
+  /* Sesi tambahan beres → tanggalnya disimpan tersendiri (ikut sinkron), supaya perangkat lain ikut mencentang
+     walau daftar tugas hari ini di sana disusun ulang atau nomor misinya berbeda (22 Nov 2026) */
+  if (S.remediBeres !== th.tgl && th.tugas.some((t, i) => t.jenis === "remedi" && st[i].beres)) { S.remediBeres = th.tgl; simpanData(); }
   const lama = (S.rencanaCatatan || {})[th.tgl];
   if (!lama || lama.t !== c.t || lama.s !== c.s || lama.j !== c.j) {
     S.rencanaCatatan = Object.fromEntries(Object.entries({ ...(S.rencanaCatatan || {}), [th.tgl]: c }).sort().slice(-60)); simpanData();
@@ -230,7 +233,8 @@ function tugasHariIni(r) {
   const kunci = JSON.stringify([S.tka, aturRencana(), liburPilihan(), cepatPilihan(), S.hariTes || {}]);   // pengaturan berubah → susun ulang tugas hari ini
   if (!S.rencanaHari || S.rencanaHari.tgl !== h || S.rencanaHari.kunci !== kunci) {
     const d = r.hari && r.hari[0] && r.hari[0].tgl === h ? r.hari[0] : null;
-    S.rencanaHari = { tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [],
+    const baca = S.rencanaHari && S.rencanaHari.remediBaca === h ? { remediBaca: h } : {};   // tanda "sudah dipelajari" tidak hilang saat disusun ulang
+    S.rencanaHari = { ...baca, tgl: h, kunci, dibuat: Date.now(), jenis: d ? d.jenis : "libur", tugas: d ? d.tugas : [],
       awal: { tka: totalLevelTKA() - PULAU_TKA.reduce((s, pl) => s + sisaLevel(pl).length, 0), ing: sisaInggris().reduce((s, x) => s + x.biaya, 0) } }; simpanData(false);
   }
   return S.rencanaHari;
@@ -256,7 +260,7 @@ function statusTugas(t) {
     return { n, sel, beres: sel >= n || dataMisi(t.m).lv > 0 }; }
   if (t.jenis === "sim") { const hari = riwayatTes(t.tid).some(x => hariIni(new Date(x.t)) === hariIni()) || terbaikTes(t.tid) >= BATAS_TES; return { n: 1, sel: hari ? 1 : 0, beres: hari }; }
   /* Level ulang: cukup lulus satu level misi itu hari ini (nomor level di salinan perangkat lain bisa berbeda) */
-  if (t.jenis === "remedi") { const ok = t.m ? logHari(hariIni()).some(x => x.m === t.m && x.lulus) : !!(S.rencanaHari && S.rencanaHari.remediBaca === hariIni()); return { n: 1, sel: ok ? 1 : 0, beres: ok }; }
+  if (t.jenis === "remedi") { const ok = S.remediBeres === hariIni() || (t.m ? logHari(hariIni()).some(x => x.m === t.m && x.lulus) : !!(S.rencanaHari && S.rencanaHari.remediBaca === hariIni())); return { n: 1, sel: ok ? 1 : 0, beres: ok }; }
   const ada = logHari(hariIni()).length > 0 || (S.harian.tgl === hariIni() && S.harian.selesai); return { n: 1, sel: ada ? 1 : 0, beres: ada };
 }
 function teksTugas(t) {

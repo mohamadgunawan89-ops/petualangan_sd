@@ -66,6 +66,7 @@ function gabungKemajuan(a, b) {
       pasangKolom(g, k, kb > ka ? pb[k] : pa[k]); g.waktuAtur[k] = Math.max(ka, kb); }
   } else g.waktuAtur = { ...((a.profil ? a : b).waktuAtur || {}) };
   g.rencanaHari = gabungHari(a.rencanaHari, b.rencanaHari);
+  g.remediBeres = [a.remediBeres, b.remediBeres].filter(Boolean).sort().pop() || "";   // tanggal terakhir Sesi tambahan beres
   // Titik awal "sesuai jadwal": yang cocok dengan tanggal TKA / target Bahasa Inggris sekarang, dan yang paling awal
   const awal = (x, y, cocok) => [x, y].filter(v => v && cocok(v)).sort((p, q) => (p.tgl < q.tgl ? -1 : p.tgl > q.tgl ? 1 : 0))[0] || x || y;
   g.rencanaAwal = awal(a.rencanaAwal, b.rencanaAwal, v => v.tka === g.tka);
